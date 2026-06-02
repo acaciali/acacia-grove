@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Month Money rules.
+// History is append-only: undo creates a *new* reversing entry rather than
+// editing/deleting an existing one. Chores are fully mutable so we can
+// rename, retire (archive), and adjust amounts.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /chores/{id} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /buckets/{id} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /history/{id} {
+      allow read, create: if true;
+      allow update, delete: if false;
+    }
+  }
+}
