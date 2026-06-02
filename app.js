@@ -44,11 +44,11 @@ if (!USERS.find((u) => u.id === state.activeUser)) {
 // ---------- DOM refs ----------
 const $balance = document.getElementById("balance");
 const $balanceLabel = document.getElementById("balance-label");
-const $otherBalance = document.getElementById("other-balance");
 const $userBtns = document.querySelectorAll(".user-btn");
 const $bucketList = document.getElementById("bucket-list");
 const $monthBtn = document.getElementById("month-btn");
 const $holidayBtn = document.getElementById("holiday-btn");
+const $customBtn = document.getElementById("custom-btn");
 const $spendForm = document.getElementById("spend-form");
 const $spendInput = document.getElementById("spend-input");
 const $search = document.getElementById("chore-search");
@@ -100,10 +100,6 @@ function toast(msg, kind = "info") {
 
 function userName(id) {
   return USERS.find((u) => u.id === id)?.name ?? id;
-}
-
-function otherUserId(id) {
-  return USERS.find((u) => u.id !== id)?.id;
 }
 
 function bucketName(id) {
@@ -159,6 +155,7 @@ function labelFor(entry) {
   if (entry.type === "holiday") return entry.holidayName || "Holiday";
   if (entry.type === "monthly") return "Month start";
   if (entry.type === "starting") return "Starting balance";
+  if (entry.type === "custom") return "Custom";
   return entry.type;
 }
 
@@ -219,14 +216,6 @@ function render() {
   $balance.textContent = fmt(bal);
   $balance.classList.toggle("negative", bal < 0);
   $balanceLabel.textContent = bucketName(state.activeBucket);
-
-  const other = otherUserId(state.activeUser);
-  const otherParts = activeBuckets(other).map(
-    (b) => `${b.name}: ${fmt(balanceFor(other, b.id))}`,
-  );
-  $otherBalance.textContent = otherParts.length
-    ? `${userName(other)} — ${otherParts.join("  ·  ")}`
-    : "";
 
   renderBuckets();
   renderChores();
@@ -456,6 +445,26 @@ async function tapMonth() {
   toast(`Month start +$25 → ${bucketName(state.activeBucket)}`);
 }
 
+async function tapCustom() {
+  const raw = window.prompt(
+    `Add to ${bucketName(state.activeBucket)} for ${userName(
+      state.activeUser,
+    )}:`,
+  );
+  if (raw === null) return;
+  const amount = parseFloat(raw);
+  if (!isFinite(amount) || amount <= 0) {
+    toast("Enter an amount above 0", "error");
+    return;
+  }
+  await addHistory({
+    userId: state.activeUser,
+    type: "custom",
+    amount,
+  });
+  toast(`Custom +${fmt(amount)} → ${bucketName(state.activeBucket)}`);
+}
+
 async function submitSpend(e) {
   e.preventDefault();
   const raw = parseFloat($spendInput.value);
@@ -635,6 +644,7 @@ $bucketList.addEventListener("click", (e) => {
 
 $monthBtn.addEventListener("click", tapMonth);
 $holidayBtn.addEventListener("click", tapHoliday);
+$customBtn.addEventListener("click", tapCustom);
 $spendForm.addEventListener("submit", submitSpend);
 
 $search.addEventListener("input", () => {

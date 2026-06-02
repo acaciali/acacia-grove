@@ -107,15 +107,6 @@ main {
   margin-top: 4px;
 }
 
-.other-balance {
-  text-align: center;
-  color: var(--ink-soft);
-  font-size: 13px;
-  margin-top: 6px;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.4;
-}
-
 /* --- Bucket cards --- */
 .buckets {
   margin-top: 16px;
@@ -198,6 +189,11 @@ main {
 .actions > .action-btn:nth-child(2) {
   background: #e9c46a;
   color: #4a3a05;
+}
+
+.actions > .action-btn:nth-child(3) {
+  background: var(--ink);
+  color: #fff;
 }
 
 .spend {
