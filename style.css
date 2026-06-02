@@ -453,6 +453,87 @@ main {
   cursor: default;
 }
 
+.owner-btn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  border-radius: 999px;
+  min-width: 80px;
+  padding: 0 12px;
+  font-size: 13px;
+  min-height: 36px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.manage-row.bucket {
+  grid-template-columns: 1fr auto auto;
+}
+
+/* --- Modal --- */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(29, 53, 87, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px 20px 20px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-title {
+  font-size: 22px;
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+.modal-body {
+  margin: 0 0 20px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.modal-btn {
+  min-height: var(--tap);
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal-btn.dismiss {
+  background: var(--bg);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.modal-btn.apply {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
 .manage-row.archived {
   opacity: 0.5;
 }

@@ -105,6 +105,17 @@
 
     <div class="status" id="status" hidden></div>
 
+    <div class="modal" id="holiday-modal" hidden role="dialog" aria-modal="true" aria-labelledby="holiday-title">
+      <div class="modal-card">
+        <h2 id="holiday-title" class="modal-title"></h2>
+        <p class="modal-body" id="holiday-body"></p>
+        <div class="modal-actions">
+          <button class="modal-btn dismiss" id="holiday-dismiss" type="button">Not now</button>
+          <button class="modal-btn apply" id="holiday-apply" type="button">Add $10</button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="./app.js"></script>
   </body>
 </html>

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Seed Month Money</title>
+    <link rel="stylesheet" href="./style.css" />
+    <style>
+      main.seed {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+      .seed h1 {
+        margin-top: 0;
+      }
+      .seed-status {
+        background: var(--surface);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        margin: 16px 0;
+        box-shadow: var(--shadow);
+        font-variant-numeric: tabular-nums;
+      }
+      .seed-status p {
+        margin: 4px 0;
+      }
+      .seed-btn {
+        display: block;
+        width: 100%;
+        min-height: 56px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        border: none;
+        border-radius: var(--radius);
+        font-size: 17px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .seed-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .seed-log {
+        margin-top: 18px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        background: var(--surface);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        max-height: 320px;
+        overflow: auto;
+        white-space: pre-wrap;
+        box-shadow: var(--shadow);
+      }
+      .seed-warn {
+        background: #fff4d9;
+        color: #6b4a05;
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        margin: 12px 0;
+      }
+      .seed-link {
+        display: inline-block;
+        margin-top: 16px;
+        color: var(--ink);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="seed">
+      <h1>Seed Month Money</h1>
+      <p>
+        One-time setup: writes the chore list, David's personal buckets, and
+        starting balances. Refuses to run if data already exists.
+      </p>
+
+      <div class="seed-status" id="status">Checking current data…</div>
+
+      <button class="seed-btn" id="seed-btn" disabled>Seed everything</button>
+
+      <div class="seed-log" id="log" hidden></div>
+
+      <a class="seed-link" href="./index.html">→ Back to the app</a>
+    </main>
+
+    <script type="module" src="./seed.js"></script>
+  </body>
+</html>

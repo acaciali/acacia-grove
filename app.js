@@ -62,6 +62,11 @@ const $bucketForm = document.getElementById("bucket-form");
 const $newBucketName = document.getElementById("new-bucket-name");
 const $manageBuckets = document.getElementById("manage-buckets");
 const $status = document.getElementById("status");
+const $holidayModal = document.getElementById("holiday-modal");
+const $holidayTitle = document.getElementById("holiday-title");
+const $holidayBody = document.getElementById("holiday-body");
+const $holidayApply = document.getElementById("holiday-apply");
+const $holidayDismiss = document.getElementById("holiday-dismiss");
 
 // ---------- Helpers ----------
 const fmt = (n) => {
@@ -105,9 +110,15 @@ function bucketName(id) {
   return state.buckets.find((b) => b.id === id)?.name ?? "Unknown bucket";
 }
 
-function activeBuckets() {
+function isVisibleToUser(bucket, userId) {
+  if (bucket.archived) return false;
+  if (!bucket.owner) return true; // shared
+  return bucket.owner === userId;
+}
+
+function activeBuckets(userId = state.activeUser) {
   return state.buckets
-    .filter((b) => !b.archived)
+    .filter((b) => isVisibleToUser(b, userId))
     .sort((a, b) => {
       if (a.id === DEFAULT_BUCKET_ID) return -1;
       if (b.id === DEFAULT_BUCKET_ID) return 1;
@@ -117,12 +128,14 @@ function activeBuckets() {
 
 function ensureActiveBucketValid() {
   const active = state.buckets.find(
-    (b) => b.id === state.activeBucket && !b.archived,
+    (b) => b.id === state.activeBucket && isVisibleToUser(b, state.activeUser),
   );
   if (active) return;
   const fallback =
-    state.buckets.find((b) => b.id === DEFAULT_BUCKET_ID && !b.archived) ||
-    activeBuckets()[0];
+    state.buckets.find(
+      (b) =>
+        b.id === DEFAULT_BUCKET_ID && isVisibleToUser(b, state.activeUser),
+    ) || activeBuckets()[0];
   if (fallback && fallback.id !== state.activeBucket) {
     state.activeBucket = fallback.id;
     localStorage.setItem("activeBucket", state.activeBucket);
@@ -143,8 +156,9 @@ function timeAgo(date) {
 function labelFor(entry) {
   if (entry.type === "chore") return entry.choreName || "Chore";
   if (entry.type === "spend") return "Spend";
-  if (entry.type === "holiday") return "Holiday";
+  if (entry.type === "holiday") return entry.holidayName || "Holiday";
   if (entry.type === "monthly") return "Month start";
+  if (entry.type === "starting") return "Starting balance";
   return entry.type;
 }
 
@@ -207,10 +221,12 @@ function render() {
   $balanceLabel.textContent = bucketName(state.activeBucket);
 
   const other = otherUserId(state.activeUser);
-  const otherParts = activeBuckets().map(
+  const otherParts = activeBuckets(other).map(
     (b) => `${b.name}: ${fmt(balanceFor(other, b.id))}`,
   );
-  $otherBalance.textContent = `${userName(other)} — ${otherParts.join("  ·  ")}`;
+  $otherBalance.textContent = otherParts.length
+    ? `${userName(other)} — ${otherParts.join("  ·  ")}`
+    : "";
 
   renderBuckets();
   renderChores();
@@ -349,6 +365,11 @@ function renderManage() {
     .join("");
 }
 
+function ownerLabel(owner) {
+  if (!owner) return "Shared";
+  return userName(owner);
+}
+
 function renderManageBuckets() {
   const sorted = [...state.buckets].sort((a, b) => {
     if (a.id === DEFAULT_BUCKET_ID) return -1;
@@ -370,11 +391,17 @@ function renderManageBuckets() {
         : b.archived
           ? "Restore"
           : "Archive";
+      const ownerBtn = isDefault
+        ? ""
+        : `<button class="owner-btn" data-action="cycle-owner" data-id="${esc(
+            b.id,
+          )}">${esc(ownerLabel(b.owner))}</button>`;
       return `
         <li class="manage-row bucket ${
           b.archived ? "archived" : ""
         }" data-id="${esc(b.id)}">
           <input type="text" data-field="name" value="${esc(b.name)}" aria-label="Bucket name" />
+          ${ownerBtn}
           <button class="archive-btn" data-action="toggle-bucket-archive" data-id="${esc(
             b.id,
           )}" ${isDefault ? "disabled" : ""}>${archiveLabel}</button>
@@ -566,6 +593,23 @@ async function toggleBucketArchive(bucketId) {
   }
 }
 
+const OWNER_CYCLE = [undefined, "acacia", "david"];
+async function cycleBucketOwner(bucketId) {
+  if (bucketId === DEFAULT_BUCKET_ID) return;
+  const bucket = state.buckets.find((b) => b.id === bucketId);
+  if (!bucket) return;
+  const idx = OWNER_CYCLE.indexOf(bucket.owner ?? undefined);
+  const next = OWNER_CYCLE[(idx + 1) % OWNER_CYCLE.length];
+  try {
+    await updateDoc(doc(db, "buckets", bucketId), {
+      owner: next ?? null,
+    });
+  } catch (err) {
+    console.error(err);
+    toast("Couldn't update bucket", "error");
+  }
+}
+
 function pickBucket(bucketId) {
   if (state.activeBucket === bucketId) return;
   state.activeBucket = bucketId;
@@ -579,6 +623,7 @@ $userBtns.forEach((btn) => {
     state.activeUser = btn.dataset.user;
     localStorage.setItem("activeUser", state.activeUser);
     render();
+    showHolidayPrompt();
   });
 });
 
@@ -628,9 +673,15 @@ $manageList.addEventListener("change", (e) => {
 $bucketForm.addEventListener("submit", submitNewBucket);
 
 $manageBuckets.addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-action='toggle-bucket-archive']");
-  if (!btn || btn.disabled) return;
-  toggleBucketArchive(btn.dataset.id);
+  const archive = e.target.closest("[data-action='toggle-bucket-archive']");
+  if (archive && !archive.disabled) {
+    toggleBucketArchive(archive.dataset.id);
+    return;
+  }
+  const owner = e.target.closest("[data-action='cycle-owner']");
+  if (owner) {
+    cycleBucketOwner(owner.dataset.id);
+  }
 });
 
 $manageBuckets.addEventListener("change", (e) => {
@@ -640,6 +691,126 @@ $manageBuckets.addEventListener("change", (e) => {
   if (!row) return;
   renameBucket(row.dataset.id, input.value);
 });
+
+// ---------- Holidays ----------
+// Floating dates are looked up by year; fixed dates are checked by MM-DD.
+const EASTER = {
+  2026: "04-05",
+  2027: "03-28",
+  2028: "04-16",
+  2029: "04-01",
+  2030: "04-21",
+  2031: "04-13",
+  2032: "03-28",
+  2033: "04-17",
+  2034: "04-09",
+  2035: "03-25",
+};
+const CHINESE_NEW_YEAR = {
+  2026: "02-17",
+  2027: "02-06",
+  2028: "01-26",
+  2029: "02-13",
+  2030: "02-03",
+  2031: "01-23",
+  2032: "02-11",
+  2033: "01-31",
+  2034: "02-19",
+  2035: "02-08",
+};
+
+function fourthThursdayOfNov(year) {
+  // First Thursday: Nov has 30 days; Jan 1 + offset. Iterate.
+  for (let day = 22; day <= 28; day++) {
+    const d = new Date(year, 10, day);
+    if (d.getDay() === 4) return pad2(day);
+  }
+  return "27"; // safe fallback
+}
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function getHolidayToday(now = new Date()) {
+  const year = now.getFullYear();
+  const md = `${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+  const fixed = [
+    { id: "valentines", name: "Valentine's Day", md: "02-14" },
+    { id: "july-4", name: "Independence Day", md: "07-04" },
+    { id: "halloween", name: "Halloween", md: "10-31" },
+    { id: "christmas", name: "Christmas", md: "12-25" },
+  ];
+  for (const h of fixed) {
+    if (h.md === md) return { ...h, amount: 10 };
+  }
+  if (EASTER[year] === md) return { id: "easter", name: "Easter", amount: 10 };
+  if (CHINESE_NEW_YEAR[year] === md) {
+    return { id: "chinese-new-year", name: "Chinese New Year", amount: 10 };
+  }
+  if (now.getMonth() === 10 && pad2(now.getDate()) === fourthThursdayOfNov(year)) {
+    return { id: "thanksgiving", name: "Thanksgiving", amount: 10 };
+  }
+  return null;
+}
+
+function todayKey(now = new Date()) {
+  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+}
+
+function holidayDismissKey(holidayId, userId, now = new Date()) {
+  return `holidayDismissed:${todayKey(now)}:${holidayId}:${userId}`;
+}
+
+let currentHoliday = null;
+
+function showHolidayPrompt() {
+  const h = getHolidayToday();
+  if (!h) {
+    currentHoliday = null;
+    $holidayModal.hidden = true;
+    return;
+  }
+  const key = holidayDismissKey(h.id, state.activeUser);
+  if (localStorage.getItem(key)) {
+    currentHoliday = null;
+    $holidayModal.hidden = true;
+    return;
+  }
+  currentHoliday = h;
+  $holidayTitle.textContent = `Today is ${h.name}!`;
+  $holidayBody.textContent = `Add $${h.amount} to ${bucketName(
+    state.activeBucket,
+  )} for ${userName(state.activeUser)}?`;
+  $holidayApply.textContent = `Add $${h.amount}`;
+  $holidayModal.hidden = false;
+}
+
+function dismissHoliday() {
+  if (!currentHoliday) return;
+  localStorage.setItem(
+    holidayDismissKey(currentHoliday.id, state.activeUser),
+    "1",
+  );
+  currentHoliday = null;
+  $holidayModal.hidden = true;
+}
+
+async function applyHoliday() {
+  if (!currentHoliday) return;
+  const h = currentHoliday;
+  await addHistory({
+    userId: state.activeUser,
+    type: "holiday",
+    amount: h.amount,
+    holidayName: h.name,
+  });
+  toast(`${h.name} +$${h.amount} → ${bucketName(state.activeBucket)}`);
+  dismissHoliday();
+}
+
+$holidayApply.addEventListener("click", applyHoliday);
+$holidayDismiss.addEventListener("click", dismissHoliday);
 
 // ---------- Listeners ----------
 onSnapshot(collection(db, "chores"), (snap) => {
@@ -664,3 +835,4 @@ onSnapshot(
 );
 
 render();
+showHolidayPrompt();

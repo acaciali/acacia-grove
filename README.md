@@ -8,15 +8,20 @@ Firebase Firestore, hosted on GitHub Pages. No build step.
 
 - Two hardcoded users: `acacia` and `david`. The top toggle picks who's active
   on this device; the choice is remembered in `localStorage`.
-- **Buckets** are named pools of money, shared across both users — e.g.
-  `Month Money`, `California Trip`, `Switch 2`. Each user has their own balance
-  in each bucket. The active bucket is highlighted; tap any bucket card to
-  switch. The active bucket is remembered per device.
+- **Buckets** are named pools of money — e.g. `Month Money`, `California Trip`.
+  Each user has their own balance in each bucket. The active bucket is
+  highlighted; tap any bucket card to switch. The active bucket is remembered
+  per device.
+- A bucket can be **Shared** (both users see it) or owned by one user (only
+  that user sees it). Toggle owner in **Manage buckets**.
 - Tapping a chore writes a `history` entry into the active bucket for the
   active user.
 - `+$25 month`, `+$10 holiday`, and `Spend` all act on the active bucket. To
   save chore money toward a trip, switch to that bucket first, then tap the
   chore.
+- **Holiday popup**: on Valentine's, Easter, July 4, Halloween, Thanksgiving,
+  Christmas, and Chinese New Year, opening the app shows a one-tap reminder to
+  credit $10. Dismissed once per device per user per day.
 - Undo writes a *reversing* history entry rather than editing/deleting the
   original — history is append-only.
 - Balance for a user/bucket = sum of all `amount` fields where userId and
@@ -54,15 +59,15 @@ control is enforced by the Firestore rules.
 2. Source: **Deploy from a branch**, Branch: `main`, Folder: `/ (root)`.
 3. Save. Wait ~30 seconds, then open the URL GitHub shows.
 
-### 4. Seed the chore list and (optionally) extra buckets
+### 4. Seed initial data (one time)
 
-Open the published URL on a phone or desktop:
+Visit `<your-pages-url>/seed.html` once. It pre-populates the full chore list,
+David's personal buckets (California Trip, Lego Millennium Falcon, etc.), and
+the starting balances from the original shared note. The page refuses to run
+twice (it checks for existing data), so it's safe to leave deployed.
 
-- Expand **Manage chores** and add each chore with its dollar amount.
-- Expand **Manage buckets** to add savings buckets like `California Trip`.
-  The `Month Money` bucket is created automatically on first launch.
-
-Anyone with the URL can edit.
+After seeding, open `<your-pages-url>/` to use the app. You can always add or
+edit chores and buckets later via the **Manage** sections at the bottom.
 
 ## Daily use
 
@@ -79,10 +84,11 @@ Anyone with the URL can edit.
 ## File map
 
 - `index.html` — single-page UI
-- `app.js` — all logic (Firebase listeners, render, actions)
+- `app.js` — all logic (Firebase listeners, render, actions, holiday popup)
 - `style.css` — mobile-first styles
 - `firebase-config.js` — your Firebase web config (replace placeholders)
 - `firestore.rules` — paste into the Firebase console
+- `seed.html` / `seed.js` — one-time seed page
 
 ## Notes
 
