@@ -6,6 +6,7 @@ import {
   getDocs,
   addDoc,
   setDoc,
+  updateDoc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
@@ -15,51 +16,56 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const DEFAULT_BUCKET_ID = "month-money";
 
-// [name, amount] -- amounts in dollars.
+// [name, amount, category] -- amounts in dollars.
 const CHORES = [
-  ["Vacuum (per floor)", 4],
-  ["Dusting", 4],
-  ["Bathtub", 3],
-  ["Toilet", 5],
-  ["Laundry load", 2],
-  ["Folding laundry", 1],
-  ["Putting clothes away (per person)", 1],
-  ["Garbage", 1],
-  ["Bathroom sink", 3],
-  ["Bathroom mirror", 1],
-  ["Bathroom floor", 2],
-  ["Load of dishes", 1],
-  ["Hand drying", 2],
-  ["Kitchen counters, table and stove", 3],
-  ["Kitchen sweep", 1],
-  ["Kitchen mop", 2],
-  ["Clean sink", 1],
-  ["Dinner", 2],
-  ["Fancy dinner / meal prepping", 5],
-  ["Sides / desserts", 1],
-  ["Indexing", 1],
-  ["Cleaning ice / snow off car", 1],
-  ["Check mail", 1],
-  ["Make bed", 1],
-  ["Clean appliance", 1],
-  ["Ironing", 1],
-  ["Oven", 3],
-  ["Oven racks", 2],
-  ["Stovetop / under", 2],
-  ["Fill up Britta", 1],
-  ["Fill up humidifier", 1],
-  ["Swearing / burping", 1],
-  ["Fill up handsoap / dishsoap / ice tray / etc.", 1],
-  ["Water the plants", 1],
-  ["Shine shoes", 1],
-  ["Brush 2x", 2],
-  ["Floss", 1],
-  ["Water floss", 1],
-  ["Violin or dance 30 min/day", 1],
-  ["Sewing", 3],
-  ["Put away 20 things", 1],
-  ["Pills", 1],
+  ["Load of dishes", 1, "Kitchen"],
+  ["Hand drying", 2, "Kitchen"],
+  ["Kitchen counters, table and stove", 3, "Kitchen"],
+  ["Kitchen sweep", 1, "Kitchen"],
+  ["Kitchen mop", 2, "Kitchen"],
+  ["Clean sink", 1, "Kitchen"],
+  ["Dinner", 2, "Kitchen"],
+  ["Fancy dinner / meal prepping", 5, "Kitchen"],
+  ["Sides / desserts", 1, "Kitchen"],
+  ["Clean appliance", 1, "Kitchen"],
+  ["Oven", 3, "Kitchen"],
+  ["Oven racks", 2, "Kitchen"],
+  ["Stovetop / under", 2, "Kitchen"],
+  ["Fill up Britta", 1, "Kitchen"],
+  ["Bathtub", 3, "Bathroom"],
+  ["Toilet", 5, "Bathroom"],
+  ["Bathroom sink", 3, "Bathroom"],
+  ["Bathroom mirror", 1, "Bathroom"],
+  ["Bathroom floor", 2, "Bathroom"],
+  ["Laundry load", 2, "Laundry"],
+  ["Folding laundry", 1, "Laundry"],
+  ["Putting clothes away (per person)", 1, "Laundry"],
+  ["Ironing", 1, "Laundry"],
+  ["Vacuum (per floor)", 4, "Living areas"],
+  ["Dusting", 4, "Living areas"],
+  ["Garbage", 1, "Living areas"],
+  ["Put away 20 things", 1, "Living areas"],
+  ["Make bed", 1, "Bedroom"],
+  ["Cleaning ice / snow off car", 1, "Outside"],
+  ["Check mail", 1, "Outside"],
+  ["Brush 2x", 2, "Self-care"],
+  ["Floss", 1, "Self-care"],
+  ["Water floss", 1, "Self-care"],
+  ["Violin or dance 30 min/day", 1, "Self-care"],
+  ["Pills", 1, "Self-care"],
+  ["Indexing", 1, "Other"],
+  ["Fill up humidifier", 1, "Other"],
+  ["Swearing / burping", 1, "Other"],
+  ["Fill up handsoap / dishsoap / ice tray / etc.", 1, "Other"],
+  ["Water the plants", 1, "Other"],
+  ["Shine shoes", 1, "Other"],
+  ["Sewing", 3, "Other"],
 ];
+
+// Used by the migration button to assign categories to already-seeded chores.
+const CHORE_CATEGORY_MAP = Object.fromEntries(
+  CHORES.map(([name, , category]) => [name, category]),
+);
 
 // [bucketName, davidStartingBalance] -- David-owned personal buckets.
 const DAVID_BUCKETS = [
@@ -80,6 +86,7 @@ const MONTH_MONEY_START = [
 
 const $status = document.getElementById("status");
 const $btn = document.getElementById("seed-btn");
+const $recategorize = document.getElementById("recategorize-btn");
 const $log = document.getElementById("log");
 
 function log(line) {
@@ -178,13 +185,14 @@ async function seedAll() {
     }
 
     log("Adding chores…");
-    for (const [name, amount] of CHORES) {
+    for (const [name, amount, category] of CHORES) {
       await addDoc(collection(db, "chores"), {
         name,
         amount,
+        category,
         archived: false,
       });
-      log(`  + ${name} ($${amount})`);
+      log(`  + ${name} ($${amount}, ${category})`);
     }
 
     log("\nDone. Open the app and tap your name to start.");
@@ -196,5 +204,39 @@ async function seedAll() {
   }
 }
 
+async function recategorize() {
+  $recategorize.disabled = true;
+  $log.textContent = "";
+  log("Reading existing chores…");
+  try {
+    const snap = await getDocs(collection(db, "chores"));
+    let updated = 0;
+    let skipped = 0;
+    for (const d of snap.docs) {
+      const data = d.data();
+      const target = CHORE_CATEGORY_MAP[data.name];
+      if (!target) {
+        log(`  - ${data.name}: no mapping, skipping`);
+        skipped++;
+        continue;
+      }
+      if (data.category === target) {
+        skipped++;
+        continue;
+      }
+      await updateDoc(doc(db, "chores", d.id), { category: target });
+      log(`  ✓ ${data.name} → ${target}`);
+      updated++;
+    }
+    log(`\nDone. Updated ${updated}, skipped ${skipped}.`);
+  } catch (err) {
+    console.error(err);
+    log(`\nERROR: ${err.message}`);
+  } finally {
+    $recategorize.disabled = false;
+  }
+}
+
 $btn.addEventListener("click", seedAll);
+$recategorize.addEventListener("click", recategorize);
 refresh();

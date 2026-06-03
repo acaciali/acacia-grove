@@ -6,6 +6,7 @@ import {
   addDoc,
   setDoc,
   updateDoc,
+  writeBatch,
   query,
   orderBy,
   limit,
@@ -26,6 +27,17 @@ const USERS = [
 // Fixed ID for the default bucket so two devices on first launch can both
 // "ensure" it without racing. Renameable; not archivable.
 const DEFAULT_BUCKET_ID = "month-money";
+
+const CATEGORIES = [
+  "Kitchen",
+  "Bathroom",
+  "Laundry",
+  "Living areas",
+  "Bedroom",
+  "Outside",
+  "Self-care",
+  "Other",
+];
 
 const state = {
   activeUser: localStorage.getItem("activeUser") || "acacia",
@@ -67,6 +79,13 @@ const $holidayTitle = document.getElementById("holiday-title");
 const $holidayBody = document.getElementById("holiday-body");
 const $holidayApply = document.getElementById("holiday-apply");
 const $holidayDismiss = document.getElementById("holiday-dismiss");
+const $transferBtn = document.getElementById("transfer-btn");
+const $transferModal = document.getElementById("transfer-modal");
+const $transferForm = document.getElementById("transfer-form");
+const $transferFrom = document.getElementById("transfer-from");
+const $transferTo = document.getElementById("transfer-to");
+const $transferAmount = document.getElementById("transfer-amount");
+const $transferCancel = document.getElementById("transfer-cancel");
 
 // ---------- Helpers ----------
 const fmt = (n) => {
@@ -156,6 +175,11 @@ function labelFor(entry) {
   if (entry.type === "monthly") return "Month start";
   if (entry.type === "starting") return "Starting balance";
   if (entry.type === "custom") return "Custom";
+  if (entry.type === "quick") return "Quick add";
+  if (entry.type === "transfer") {
+    const other = entry.otherBucketId ? bucketName(entry.otherBucketId) : "bucket";
+    return entry.amount < 0 ? `Transfer to ${other}` : `Transfer from ${other}`;
+  }
   return entry.type;
 }
 
@@ -245,12 +269,16 @@ function renderBuckets() {
     .join("");
 }
 
+function categoryRank(cat) {
+  const i = CATEGORIES.indexOf(cat);
+  return i === -1 ? CATEGORIES.length : i;
+}
+
 function renderChores() {
   const q = state.search.trim().toLowerCase();
   const visible = state.chores
     .filter((c) => !c.archived)
-    .filter((c) => !q || c.name.toLowerCase().includes(q))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .filter((c) => !q || c.name.toLowerCase().includes(q));
 
   if (visible.length === 0) {
     $choreList.innerHTML = `<li class="chore-empty">${
@@ -261,18 +289,33 @@ function renderChores() {
     return;
   }
 
-  $choreList.innerHTML = visible
-    .map(
-      (c) => `
+  const groups = new Map();
+  for (const c of visible) {
+    const cat = c.category || "Other";
+    if (!groups.has(cat)) groups.set(cat, []);
+    groups.get(cat).push(c);
+  }
+  const cats = [...groups.keys()].sort((a, b) => {
+    const diff = categoryRank(a) - categoryRank(b);
+    return diff !== 0 ? diff : a.localeCompare(b);
+  });
+
+  let html = "";
+  for (const cat of cats) {
+    html += `<li class="chore-cat-header">${esc(cat)}</li>`;
+    const chores = groups.get(cat).sort((a, b) => a.name.localeCompare(b.name));
+    for (const c of chores) {
+      html += `
         <li class="chore-row" data-id="${esc(c.id)}">
           <span class="chore-name">${esc(c.name)}</span>
           <span class="chore-amount">${fmt(Number(c.amount) || 0)}</span>
           <button class="chore-add-btn" data-action="add-chore" data-id="${esc(
             c.id,
           )}" aria-label="Add ${esc(c.name)}">+</button>
-        </li>`,
-    )
-    .join("");
+        </li>`;
+    }
+  }
+  $choreList.innerHTML = html;
 }
 
 function renderHistory() {
@@ -328,6 +371,8 @@ function renderHistory() {
 function renderManage() {
   const sorted = [...state.chores].sort((a, b) => {
     if (!!a.archived !== !!b.archived) return a.archived ? 1 : -1;
+    const rd = categoryRank(a.category || "Other") - categoryRank(b.category || "Other");
+    if (rd !== 0) return rd;
     return a.name.localeCompare(b.name);
   });
 
@@ -336,21 +381,31 @@ function renderManage() {
     return;
   }
 
+  const catOptions = CATEGORIES.map(
+    (c) => `<option value="${esc(c)}">${esc(c)}</option>`,
+  ).join("");
+
   $manageList.innerHTML = sorted
-    .map(
-      (c) => `
-        <li class="manage-row ${c.archived ? "archived" : ""}" data-id="${esc(
+    .map((c) => {
+      const cat = c.category || "Other";
+      const selectOptions = CATEGORIES.map(
+        (opt) =>
+          `<option value="${esc(opt)}" ${opt === cat ? "selected" : ""}>${esc(opt)}</option>`,
+      ).join("");
+      return `
+        <li class="manage-row chore ${c.archived ? "archived" : ""}" data-id="${esc(
           c.id,
         )}">
           <input type="text" data-field="name" value="${esc(c.name)}" aria-label="Name" />
           <input type="number" min="0" step="0.01" inputmode="decimal" data-field="amount" value="${
             Number(c.amount) || 0
           }" aria-label="Amount" />
+          <select data-field="category" aria-label="Category">${selectOptions}</select>
           <button class="archive-btn" data-action="toggle-archive" data-id="${esc(
             c.id,
           )}">${c.archived ? "Restore" : "Archive"}</button>
-        </li>`,
-    )
+        </li>`;
+    })
     .join("");
 }
 
@@ -445,6 +500,16 @@ async function tapMonth() {
   toast(`Month start +$25 → ${bucketName(state.activeBucket)}`);
 }
 
+async function tapQuick(amount) {
+  if (!isFinite(amount) || amount <= 0) return;
+  await addHistory({
+    userId: state.activeUser,
+    type: "quick",
+    amount,
+  });
+  toast(`+${fmt(amount)} → ${bucketName(state.activeBucket)}`);
+}
+
 async function tapCustom() {
   const raw = window.prompt(
     `Add to ${bucketName(state.activeBucket)} for ${userName(
@@ -484,6 +549,47 @@ async function submitSpend(e) {
 async function undo(historyId) {
   const original = state.history.find((h) => h.id === historyId);
   if (!original) return;
+
+  if (original.transferId) {
+    const paired = state.history.find(
+      (h) =>
+        h.transferId === original.transferId &&
+        h.id !== original.id &&
+        !h.reversesId,
+    );
+    try {
+      const batch = writeBatch(db);
+      batch.set(doc(collection(db, "history")), {
+        userId: original.userId,
+        type: "transfer",
+        amount: -(Number(original.amount) || 0),
+        bucketId: original.bucketId || DEFAULT_BUCKET_ID,
+        otherBucketId: original.otherBucketId ?? null,
+        transferId: original.transferId,
+        reversesId: original.id,
+        createdAt: serverTimestamp(),
+      });
+      if (paired) {
+        batch.set(doc(collection(db, "history")), {
+          userId: paired.userId,
+          type: "transfer",
+          amount: -(Number(paired.amount) || 0),
+          bucketId: paired.bucketId || DEFAULT_BUCKET_ID,
+          otherBucketId: paired.otherBucketId ?? null,
+          transferId: paired.transferId,
+          reversesId: paired.id,
+          createdAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
+      toast("Transfer undone");
+    } catch (err) {
+      console.error(err);
+      toast("Couldn't undo transfer", "error");
+    }
+    return;
+  }
+
   await addHistory({
     userId: original.userId,
     type: original.type,
@@ -532,6 +638,10 @@ async function updateChoreField(choreId, field, value) {
     const amount = parseFloat(value);
     if (!isFinite(amount) || amount === Number(chore.amount)) return;
     patch.amount = amount;
+  } else if (field === "category") {
+    const category = String(value);
+    if (category === (chore.category || "Other")) return;
+    patch.category = category;
   } else return;
   try {
     await updateDoc(doc(db, "chores", choreId), patch);
@@ -626,11 +736,88 @@ function pickBucket(bucketId) {
   render();
 }
 
+// ---------- Transfer ----------
+function fillTransferSelect(select, selectedId) {
+  const buckets = activeBuckets();
+  select.innerHTML = buckets
+    .map(
+      (b) =>
+        `<option value="${esc(b.id)}" ${b.id === selectedId ? "selected" : ""}>${esc(b.name)}</option>`,
+    )
+    .join("");
+}
+
+function openTransferModal() {
+  const buckets = activeBuckets();
+  if (buckets.length < 2) {
+    toast("Need at least two buckets to transfer", "error");
+    return;
+  }
+  const fromId = state.activeBucket;
+  const toId = (buckets.find((b) => b.id !== fromId) || buckets[0]).id;
+  fillTransferSelect($transferFrom, fromId);
+  fillTransferSelect($transferTo, toId);
+  $transferAmount.value = "";
+  $transferModal.hidden = false;
+  setTimeout(() => $transferAmount.focus(), 50);
+}
+
+function closeTransferModal() {
+  $transferModal.hidden = true;
+}
+
+async function submitTransfer(e) {
+  e.preventDefault();
+  const fromId = $transferFrom.value;
+  const toId = $transferTo.value;
+  const amount = parseFloat($transferAmount.value);
+  if (fromId === toId) {
+    toast("Pick two different buckets", "error");
+    return;
+  }
+  if (!isFinite(amount) || amount <= 0) {
+    toast("Enter an amount above 0", "error");
+    return;
+  }
+  const transferId = `tx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  try {
+    const batch = writeBatch(db);
+    batch.set(doc(collection(db, "history")), {
+      userId: state.activeUser,
+      type: "transfer",
+      amount: -Math.abs(amount),
+      bucketId: fromId,
+      otherBucketId: toId,
+      transferId,
+      createdAt: serverTimestamp(),
+    });
+    batch.set(doc(collection(db, "history")), {
+      userId: state.activeUser,
+      type: "transfer",
+      amount: Math.abs(amount),
+      bucketId: toId,
+      otherBucketId: fromId,
+      transferId,
+      createdAt: serverTimestamp(),
+    });
+    await batch.commit();
+    closeTransferModal();
+    toast(
+      `Transferred ${fmt(amount)}: ${bucketName(fromId)} → ${bucketName(toId)}`,
+    );
+  } catch (err) {
+    console.error(err);
+    toast("Couldn't transfer", "error");
+  }
+}
+
 // ---------- Wiring ----------
 $userBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
     state.activeUser = btn.dataset.user;
     localStorage.setItem("activeUser", state.activeUser);
+    state.search = "";
+    $search.value = "";
     render();
     showHolidayPrompt();
   });
@@ -646,6 +833,16 @@ $monthBtn.addEventListener("click", tapMonth);
 $holidayBtn.addEventListener("click", tapHoliday);
 $customBtn.addEventListener("click", tapCustom);
 $spendForm.addEventListener("submit", submitSpend);
+
+document.querySelectorAll(".quick-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    tapQuick(parseFloat(btn.dataset.quick));
+  });
+});
+
+$transferBtn.addEventListener("click", openTransferModal);
+$transferCancel.addEventListener("click", closeTransferModal);
+$transferForm.addEventListener("submit", submitTransfer);
 
 $search.addEventListener("input", () => {
   state.search = $search.value;
@@ -673,11 +870,11 @@ $manageList.addEventListener("click", (e) => {
 });
 
 $manageList.addEventListener("change", (e) => {
-  const input = e.target.closest("input[data-field]");
-  if (!input) return;
-  const row = input.closest(".manage-row");
+  const field = e.target.closest("[data-field]");
+  if (!field) return;
+  const row = field.closest(".manage-row");
   if (!row) return;
-  updateChoreField(row.dataset.id, input.dataset.field, input.value);
+  updateChoreField(row.dataset.id, field.dataset.field, field.value);
 });
 
 $bucketForm.addEventListener("submit", submitNewBucket);

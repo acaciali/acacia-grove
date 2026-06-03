@@ -157,9 +157,49 @@ main {
   color: var(--ink);
 }
 
+.transfer-btn {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 40px;
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.transfer-btn:active {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* --- Quick add row --- */
+.quick-adds {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.quick-btn {
+  min-height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  box-shadow: var(--shadow);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.quick-btn:active {
+  transform: scale(0.97);
+}
+
 /* --- Action buttons --- */
 .actions {
-  margin-top: 18px;
+  margin-top: 12px;
   display: grid;
   gap: 10px;
 }
@@ -235,6 +275,35 @@ main {
   margin-top: 24px;
 }
 
+.chores details > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chores details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.chores details > summary::before {
+  content: "▾";
+  font-size: 12px;
+  transition: transform 0.15s ease;
+}
+
+.chores details:not([open]) > summary::before {
+  transform: rotate(-90deg);
+}
+
 .search {
   width: 100%;
   min-height: var(--tap);
@@ -258,6 +327,20 @@ main {
   padding: 0;
   display: grid;
   gap: 8px;
+}
+
+.chore-cat-header {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 6px 4px 2px;
+  margin-top: 4px;
+}
+
+.chore-cat-header:first-child {
+  margin-top: 0;
 }
 
 .chore-row,
@@ -410,8 +493,25 @@ main {
   border: 1px solid var(--line);
 }
 
+.manage-row.chore {
+  grid-template-columns: 1fr 70px 110px auto;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
 .manage-row.bucket {
   grid-template-columns: 1fr auto;
+}
+
+.manage-row select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 6px 8px;
+  font: inherit;
+  color: inherit;
+  min-width: 0;
+  width: 100%;
 }
 
 .bucket-form {
@@ -528,6 +628,37 @@ main {
 .modal-btn.apply {
   background: var(--accent);
   color: var(--accent-ink);
+}
+
+.modal-field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.modal-field span {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+
+.modal-field select,
+.modal-field input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  outline: none;
+  font: inherit;
+  color: inherit;
+}
+
+.modal-field select:focus,
+.modal-field input:focus {
+  border-color: var(--ink);
 }
 
 .manage-row.archived {
