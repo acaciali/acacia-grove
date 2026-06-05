@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1d3557" />
+    <title>Flibbertygibbet</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <nav class="tabs" aria-label="Sections">
+      <a class="tab" href="./index.html">Month Money</a>
+      <a class="tab active" href="./groceries.html">Flibbertygibbet</a>
+    </nav>
+
+    <main class="groceries-main">
+      <h1 class="groceries-title">Flibbertygibbet</h1>
+
+      <form class="add-item" id="add-form" autocomplete="off">
+        <input
+          id="new-item"
+          type="text"
+          placeholder="Add an item…"
+          aria-label="New item"
+          required
+        />
+        <button type="submit">Add</button>
+      </form>
+
+      <ul class="grocery-list" id="grocery-list"></ul>
+
+      <button class="clear-checked" id="clear-checked" hidden>
+        Clear checked items
+      </button>
+    </main>
+
+    <div class="status" id="status" hidden></div>
+
+    <script type="module" src="./groceries.js"></script>
+  </body>
+</html>

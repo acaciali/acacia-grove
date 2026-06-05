@@ -48,6 +48,38 @@ main {
   margin: 0 auto;
 }
 
+/* --- Top tab bar --- */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+.top {
+  top: 49px;
+}
+
 /* --- Top bar --- */
 .top {
   position: sticky;
@@ -693,6 +725,160 @@ main {
   box-shadow: none;
   min-height: 36px;
   border-radius: 999px;
+}
+
+/* --- Flibbertygibbet (groceries) --- */
+.groceries-main {
+  padding: 16px 16px 48px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.groceries-title {
+  margin: 8px 4px 16px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.add-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.add-item input {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  outline: none;
+  font: inherit;
+  color: inherit;
+}
+
+.add-item input:focus {
+  border-color: var(--ink);
+}
+
+.add-item button {
+  min-height: var(--tap);
+  padding: 0 20px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.grocery-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.grocery-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.grocery-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  min-height: var(--tap);
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+}
+
+.grocery-box {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid var(--line);
+  background: var(--bg);
+  position: relative;
+}
+
+.grocery-row.checked .grocery-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.grocery-row.checked .grocery-box::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 6px;
+  height: 12px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.grocery-name {
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.grocery-row.checked .grocery-name {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
+
+.grocery-delete {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  padding: 0 18px;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  align-self: stretch;
+}
+
+.grocery-empty {
+  text-align: center;
+  color: var(--ink-soft);
+  padding: 32px 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.clear-checked {
+  display: block;
+  margin: 16px auto 0;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  border-radius: 999px;
+  padding: 10px 20px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* --- Status / toast --- */

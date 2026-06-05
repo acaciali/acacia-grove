@@ -18,5 +18,9 @@ service cloud.firestore {
       allow read, create: if true;
       allow update, delete: if false;
     }
+
+    match /groceries/{id} {
+      allow read, create, update, delete: if true;
+    }
   }
 }
