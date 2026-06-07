@@ -153,6 +153,7 @@ main {
 }
 
 .bucket-card {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -164,11 +165,29 @@ main {
   min-height: var(--tap);
   box-shadow: var(--shadow);
   cursor: pointer;
+  overflow: hidden;
+}
+
+.bucket-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--progress, 0%);
+  background: #c8e8c8;
+  transition: width 0.25s ease;
+  pointer-events: none;
 }
 
 .bucket-card.active {
   border-color: var(--ink);
   background: #fdfcf7;
+}
+
+.bucket-name,
+.bucket-amount,
+.bucket-goal {
+  position: relative;
+  z-index: 1;
 }
 
 .bucket-name {
@@ -179,6 +198,12 @@ main {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: var(--ink);
+}
+
+.bucket-goal {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--ink-soft);
 }
 
 .bucket-card.neg .bucket-amount {
@@ -230,6 +255,47 @@ main {
 
 .quick-btn:active {
   transform: scale(0.97);
+}
+
+/* --- Item counter widget --- */
+.item-counter-section {
+  margin-top: 10px;
+}
+
+.item-counter-btn {
+  width: 100%;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 16px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.item-counter-btn:active {
+  transform: scale(0.99);
+}
+
+.item-counter-label {
+  color: var(--ink);
+}
+
+.item-counter-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.item-counter-btn.ready .item-counter-count {
+  color: var(--accent);
 }
 
 /* --- Action buttons --- */
@@ -535,7 +601,7 @@ main {
 }
 
 .manage-row.bucket {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr 90px auto;
 }
 
 .manage-row select {
@@ -598,7 +664,17 @@ main {
 }
 
 .manage-row.bucket {
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr 80px auto auto;
+}
+
+.manage-row.bucket .bucket-goal-input {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.manage-row.bucket .bucket-goal-input::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.6;
 }
 
 /* --- Modal --- */

@@ -45,9 +45,13 @@ const state = {
   buckets: [],
   chores: [],
   history: [],
+  itemCounts: {},
   search: "",
   defaultBucketEnsured: false,
 };
+
+const ITEM_GOAL = 20;
+const itemCounterDocId = (userId) => `items-${userId}`;
 
 if (!USERS.find((u) => u.id === state.activeUser)) {
   state.activeUser = "acacia";
@@ -86,6 +90,8 @@ const $transferFrom = document.getElementById("transfer-from");
 const $transferTo = document.getElementById("transfer-to");
 const $transferAmount = document.getElementById("transfer-amount");
 const $transferCancel = document.getElementById("transfer-cancel");
+const $itemCounterBtn = document.getElementById("item-counter-btn");
+const $itemCounterCount = document.getElementById("item-counter-count");
 
 // ---------- Helpers ----------
 const fmt = (n) => {
@@ -176,6 +182,7 @@ function labelFor(entry) {
   if (entry.type === "starting") return "Starting balance";
   if (entry.type === "custom") return "Custom";
   if (entry.type === "quick") return "Quick add";
+  if (entry.type === "items") return "20 items put away";
   if (entry.type === "transfer") {
     const other = entry.otherBucketId ? bucketName(entry.otherBucketId) : "bucket";
     return entry.amount < 0 ? `Transfer to ${other}` : `Transfer from ${other}`;
@@ -242,10 +249,18 @@ function render() {
   $balanceLabel.textContent = bucketName(state.activeBucket);
 
   renderBuckets();
+  renderItemCounter();
   renderChores();
   renderHistory();
   renderManage();
   renderManageBuckets();
+}
+
+function renderItemCounter() {
+  const count = Number(state.itemCounts[state.activeUser]) || 0;
+  const clamped = Math.max(0, Math.min(ITEM_GOAL - 1, count));
+  $itemCounterCount.textContent = `${clamped}/${ITEM_GOAL}`;
+  $itemCounterBtn.classList.toggle("ready", clamped === ITEM_GOAL - 1);
 }
 
 function renderBuckets() {
@@ -258,12 +273,20 @@ function renderBuckets() {
     .map((b) => {
       const isActive = b.id === state.activeBucket;
       const bal = balanceFor(state.activeUser, b.id);
+      const goal = Number(b.goal) || 0;
+      const hasGoal = goal > 0;
+      const pct = hasGoal
+        ? Math.max(0, Math.min(100, (bal / goal) * 100))
+        : 0;
+      const amountHtml = hasGoal
+        ? `<span class="bucket-amount">${fmt(bal)}<span class="bucket-goal"> / ${fmt(goal)}</span></span>`
+        : `<span class="bucket-amount">${fmt(bal)}</span>`;
       return `
         <li class="bucket-card ${isActive ? "active" : ""} ${
           bal < 0 ? "neg" : ""
-        }" data-action="pick-bucket" data-id="${esc(b.id)}">
+        }" data-action="pick-bucket" data-id="${esc(b.id)}" style="--progress: ${pct}%">
           <span class="bucket-name">${esc(b.name)}</span>
-          <span class="bucket-amount">${fmt(bal)}</span>
+          ${amountHtml}
         </li>`;
     })
     .join("");
@@ -440,11 +463,13 @@ function renderManageBuckets() {
         : `<button class="owner-btn" data-action="cycle-owner" data-id="${esc(
             b.id,
           )}">${esc(ownerLabel(b.owner))}</button>`;
+      const goalVal = Number(b.goal) > 0 ? Number(b.goal) : "";
       return `
         <li class="manage-row bucket ${
           b.archived ? "archived" : ""
         }" data-id="${esc(b.id)}">
           <input type="text" data-field="name" value="${esc(b.name)}" aria-label="Bucket name" />
+          <input class="bucket-goal-input" type="number" min="0" step="0.01" inputmode="decimal" data-field="goal" value="${goalVal}" placeholder="Goal $" aria-label="Goal amount" />
           ${ownerBtn}
           <button class="archive-btn" data-action="toggle-bucket-archive" data-id="${esc(
             b.id,
@@ -498,6 +523,41 @@ async function tapMonth() {
     amount: 25,
   });
   toast(`Month start +$25 → ${bucketName(state.activeBucket)}`);
+}
+
+async function tapItemCounter() {
+  const userId = state.activeUser;
+  const current = Number(state.itemCounts[userId]) || 0;
+  const next = current + 1;
+  if (next >= ITEM_GOAL) {
+    try {
+      await setDoc(
+        doc(db, "counters", itemCounterDocId(userId)),
+        { count: 0 },
+        { merge: true },
+      );
+      await addHistory({
+        userId,
+        type: "items",
+        amount: 1,
+      });
+      toast(`${ITEM_GOAL} items put away — +$1 → ${bucketName(state.activeBucket)}`);
+    } catch (err) {
+      console.error(err);
+      toast("Couldn't save count", "error");
+    }
+    return;
+  }
+  try {
+    await setDoc(
+      doc(db, "counters", itemCounterDocId(userId)),
+      { count: next },
+      { merge: true },
+    );
+  } catch (err) {
+    console.error(err);
+    toast("Couldn't save count", "error");
+  }
 }
 
 async function tapQuick(amount) {
@@ -698,6 +758,33 @@ async function renameBucket(bucketId, value) {
   }
 }
 
+async function updateBucketGoal(bucketId, value) {
+  const bucket = state.buckets.find((b) => b.id === bucketId);
+  if (!bucket) return;
+  const raw = String(value).trim();
+  const currentGoal = Number(bucket.goal) || 0;
+  let nextGoal;
+  if (raw === "") {
+    nextGoal = 0;
+  } else {
+    const parsed = parseFloat(raw);
+    if (!isFinite(parsed) || parsed < 0) {
+      toast("Goal must be 0 or more", "error");
+      return;
+    }
+    nextGoal = parsed;
+  }
+  if (nextGoal === currentGoal) return;
+  try {
+    await updateDoc(doc(db, "buckets", bucketId), {
+      goal: nextGoal > 0 ? nextGoal : null,
+    });
+  } catch (err) {
+    console.error(err);
+    toast("Couldn't update goal", "error");
+  }
+}
+
 async function toggleBucketArchive(bucketId) {
   if (bucketId === DEFAULT_BUCKET_ID) return;
   const bucket = state.buckets.find((b) => b.id === bucketId);
@@ -840,6 +927,7 @@ document.querySelectorAll(".quick-btn").forEach((btn) => {
   });
 });
 
+$itemCounterBtn.addEventListener("click", tapItemCounter);
 $transferBtn.addEventListener("click", openTransferModal);
 $transferCancel.addEventListener("click", closeTransferModal);
 $transferForm.addEventListener("submit", submitTransfer);
@@ -892,11 +980,16 @@ $manageBuckets.addEventListener("click", (e) => {
 });
 
 $manageBuckets.addEventListener("change", (e) => {
-  const input = e.target.closest("input[data-field='name']");
+  const input = e.target.closest("input[data-field]");
   if (!input) return;
   const row = input.closest(".manage-row");
   if (!row) return;
-  renameBucket(row.dataset.id, input.value);
+  const field = input.dataset.field;
+  if (field === "name") {
+    renameBucket(row.dataset.id, input.value);
+  } else if (field === "goal") {
+    updateBucketGoal(row.dataset.id, input.value);
+  }
 });
 
 // ---------- Holidays ----------
@@ -1040,6 +1133,20 @@ onSnapshot(
     render();
   },
 );
+
+onSnapshot(collection(db, "counters"), (snap) => {
+  const next = {};
+  for (const d of snap.docs) {
+    const data = d.data();
+    for (const u of USERS) {
+      if (d.id === itemCounterDocId(u.id)) {
+        next[u.id] = Number(data.count) || 0;
+      }
+    }
+  }
+  state.itemCounts = next;
+  render();
+});
 
 render();
 showHolidayPrompt();
