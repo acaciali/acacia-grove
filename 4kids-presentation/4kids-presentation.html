@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4Kids Entertainment — A History</title>
+<style>
+  /* ============================================================
+     COLOR PALETTE — swap these once you have the 4Kids logo
+     ============================================================ */
+  :root {
+    --red:    #ED1C24;  /* the "K" — fire engine */
+    --yellow: #FFD400;  /* the "I" — pure gold */
+    --green:  #7AC943;  /* the "4" — bright lime */
+    --blue:   #29ABE2;  /* the outline — sky cyan */
+    --pink:   #EC008C;  /* hot pink accent */
+    --purple: #92278F;  /* the "D" — rich grape */
+    --cream:  #FFF8E1;  /* warm off-white */
+    --ink:    #1B3F8E;  /* the "TV" — vibrant navy */
+    --bubble: #FFFFFF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: "Trebuchet MS", Verdana, sans-serif;
+    background: var(--ink);
+    color: var(--ink);
+  }
+
+  /* ============================================================
+     DECK + SLIDE BASE
+     ============================================================ */
+  .deck {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    padding: 5vh 6vw;
+    overflow: hidden;
+    background: var(--cream);
+  }
+
+  .slide.active { display: flex; }
+
+  .slide h1 {
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: clamp(2.6rem, 6.5vw, 6rem);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 0.92;
+    margin-bottom: 1.4rem;
+    text-shadow: 4px 4px 0 var(--ink);
+  }
+
+  .slide h2 {
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: clamp(1.4rem, 3vw, 2.6rem);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 1.05;
+    margin-bottom: 1.2rem;
+  }
+
+  .slide h3 {
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: clamp(1.1rem, 2vw, 1.6rem);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    letter-spacing: 1px;
+  }
+
+  .slide p, .slide li {
+    font-size: clamp(1rem, 1.5vw, 1.5rem);
+    line-height: 1.5;
+    margin-bottom: 0.8rem;
+    max-width: 80ch;
+  }
+
+  .slide ul, .slide ol {
+    padding-left: 2.2rem;
+    margin-bottom: 1rem;
+  }
+  .slide li { list-style: square; }
+
+  .slide strong { font-weight: 900; }
+
+  .speaker-notes { display: none; }
+
+  /* ============================================================
+     Y2K DECORATIONS
+     ============================================================ */
+  .stars::before, .stars::after {
+    content: "★";
+    position: absolute;
+    font-size: 6rem;
+    color: var(--pink);
+    text-shadow: 4px 4px 0 var(--ink);
+    pointer-events: none;
+  }
+  .stars::before { top: 4vh; right: 6vw; transform: rotate(15deg); }
+  .stars::after  { bottom: 4vh; left: 5vw; transform: rotate(-12deg); color: var(--blue); }
+
+  .burst {
+    position: absolute;
+    width: 220px; height: 220px;
+    background: var(--yellow);
+    clip-path: polygon(
+      50% 0%, 60% 35%, 98% 35%, 68% 57%,
+      79% 91%, 50% 70%, 21% 91%, 32% 57%,
+      2% 35%, 40% 35%
+    );
+    pointer-events: none;
+  }
+
+  /* ============================================================
+     SLIDE THEMES (Y2K rotation)
+     ============================================================ */
+  .theme-pink   { background: linear-gradient(135deg, #FF0099 0%, #FF55B5 100%); color: var(--ink); }
+  .theme-blue   { background: linear-gradient(135deg, #29ABE2 0%, #00D4F5 100%); color: var(--ink); }
+  .theme-yellow { background: linear-gradient(135deg, #FFE100 0%, #FFB800 100%); color: var(--ink); }
+  .theme-green  { background: linear-gradient(135deg, #7AC943 0%, #A5E25A 100%); color: var(--ink); }
+  .theme-purple { background: linear-gradient(135deg, #92278F 0%, #C04ABC 100%); color: var(--cream); }
+  .theme-purple h1, .theme-purple h2 { text-shadow: 4px 4px 0 var(--ink); }
+  .theme-ink    { background: var(--ink); color: var(--cream); }
+  .theme-ink h1 { color: var(--yellow); text-shadow: 4px 4px 0 var(--pink); }
+  .theme-ink h2 { color: #4FE3FF; }
+
+  .theme-grid {
+    background:
+      linear-gradient(rgba(236,0,140,0.18) 1px, transparent 1px) 0 0 / 40px 40px,
+      linear-gradient(90deg, rgba(236,0,140,0.18) 1px, transparent 1px) 0 0 / 40px 40px,
+      linear-gradient(180deg, #fff 0%, #FFE6F2 100%);
+    color: var(--ink);
+  }
+
+  /* Pokémania sunburst — bright yellow with red radial rays from a corner.
+     Leaves the text area uncluttered. */
+  .theme-sunburst {
+    background:
+      repeating-conic-gradient(from 0deg at 100% 0%,
+        rgba(237,28,36,0.18) 0deg 8deg,
+        transparent 8deg 16deg),
+      radial-gradient(circle at 100% 0%, #FFE100 0%, #FFC700 70%, #FFB800 100%);
+    color: var(--ink);
+  }
+
+  /* ============================================================
+     LAYOUTS
+     ============================================================ */
+  .title-slide {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .title-slide h1 {
+    font-size: clamp(3.5rem, 11vw, 10rem);
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    gap: 2rem;
+    flex: 1;
+    align-items: stretch;
+    min-height: 0;
+  }
+  .two-col > * { min-width: 0; min-height: 0; }
+
+  .img-placeholder {
+    border: 5px dashed var(--ink);
+    background:
+      repeating-linear-gradient(45deg,
+        rgba(255,255,255,0.55) 0 12px,
+        rgba(255,255,255,0.25) 12px 24px);
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-style: italic;
+    font-weight: bold;
+    min-height: 200px;
+    flex: 1;
+  }
+
+  .quote-big {
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: clamp(2rem, 5vw, 4.5rem);
+    line-height: 1.05;
+    text-transform: uppercase;
+    margin: 1.5rem 0;
+  }
+
+  .callout {
+    background: var(--bubble);
+    color: var(--ink);
+    border: 4px solid var(--ink);
+    box-shadow: 8px 8px 0 var(--ink);
+    padding: 1.5rem 2rem;
+    margin: 1rem 0;
+  }
+
+  .pill {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--yellow);
+    padding: 0.3rem 0.9rem;
+    font-family: Impact, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-right: 0.4rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.95rem;
+  }
+
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    flex: 1;
+  }
+  .pros { background: var(--green); color: var(--ink); padding: 1.5rem; border: 4px solid var(--ink); }
+  .cons { background: var(--red); color: var(--cream); padding: 1.5rem; border: 4px solid var(--ink); }
+  .pros h3, .cons h3 { font-size: 1.6rem; margin-bottom: 0.8rem; }
+  .cons strong { background: var(--yellow); color: var(--ink); }
+
+  /* ============================================================
+     UI CHROME
+     ============================================================ */
+  .counter {
+    position: fixed;
+    bottom: 1rem;
+    right: 1.5rem;
+    background: var(--ink);
+    color: var(--yellow);
+    padding: 0.4rem 0.9rem;
+    border: 3px solid var(--yellow);
+    font-family: Impact, sans-serif;
+    font-size: 1rem;
+    z-index: 100;
+    letter-spacing: 1px;
+  }
+
+  .progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 6px;
+    background: var(--pink);
+    width: 0;
+    transition: width 0.25s ease;
+    z-index: 100;
+  }
+
+  .help-hint {
+    position: fixed;
+    bottom: 1rem;
+    left: 1.5rem;
+    background: rgba(20, 18, 43, 0.85);
+    color: var(--cream);
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem;
+    z-index: 100;
+    border-radius: 4px;
+  }
+
+  .notes-panel {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--ink);
+    color: var(--cream);
+    padding: 1.5rem 2rem 2rem;
+    max-height: 45vh;
+    overflow-y: auto;
+    display: none;
+    font-family: "Trebuchet MS", Verdana, sans-serif;
+    font-size: 1rem;
+    line-height: 1.55;
+    border-top: 6px solid var(--yellow);
+    z-index: 90;
+    box-shadow: 0 -8px 20px rgba(0,0,0,0.4);
+  }
+  .notes-panel.visible { display: block; }
+  .notes-panel h3 {
+    color: var(--yellow);
+    font-family: Impact, sans-serif;
+    font-size: 1.1rem;
+    margin-bottom: 0.6rem;
+    letter-spacing: 1px;
+  }
+
+  .logo {
+    max-width: min(70vw, 760px);
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto 1.5rem;
+    filter: drop-shadow(8px 8px 0 rgba(0,0,0,0.45));
+  }
+  .logo-small {
+    max-width: min(40vw, 360px);
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 1.5rem auto 0;
+    filter: drop-shadow(5px 5px 0 rgba(0,0,0,0.4));
+  }
+  .notes-panel ul { padding-left: 1.5rem; margin: 0.4rem 0; }
+  .notes-panel li { margin-bottom: 0.3rem; list-style: "▸  "; }
+
+  /* ============================================================
+     SHOW ROSTER GRID
+     ============================================================ */
+  .show-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 0.7rem;
+    flex: 1;
+    margin: 0.8rem 0;
+    min-height: 0;
+  }
+  .show-card {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255,255,255,0.55);
+    border: 3px solid var(--ink);
+    padding: 0.4rem;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .show-card .img-mini {
+    flex: 1;
+    border: 2px dashed var(--ink);
+    background:
+      repeating-linear-gradient(45deg,
+        rgba(255,255,255,0.6) 0 8px,
+        rgba(255,255,255,0.25) 8px 16px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: 0.3rem;
+    min-height: 0;
+    padding: 0.2rem;
+    text-align: center;
+  }
+  .show-card .name {
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: clamp(0.7rem, 0.95vw, 1.05rem);
+    text-transform: uppercase;
+    line-height: 1.05;
+    letter-spacing: 0.5px;
+    text-align: center;
+    color: var(--ink);
+  }
+  .show-card.favorite { background: var(--yellow); border-width: 4px; }
+  .show-card.favorite .name::after {
+    content: " ★";
+    color: var(--red);
+  }
+
+  .roster-image {
+    flex: 1;
+    width: 100%;
+    object-fit: contain;
+    min-height: 0;
+    margin: 0.8rem 0;
+  }
+
+  .slide-image {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+    min-height: 0;
+  }
+
+  .play-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: var(--red);
+    color: var(--cream);
+    padding: 0.7rem 1.4rem;
+    font-family: Impact, "Arial Black", sans-serif;
+    font-size: clamp(1rem, 1.5vw, 1.4rem);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-decoration: none;
+    border: 4px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--ink);
+    margin-top: 1rem;
+    align-self: flex-start;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .play-link::before {
+    content: "▶";
+    font-size: 1.3em;
+    line-height: 1;
+  }
+  .play-link:hover {
+    transform: translate(3px, 3px);
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .play-link:active {
+    transform: translate(6px, 6px);
+    box-shadow: 0 0 0 var(--ink);
+  }
+
+  /* ============================================================
+     EXHIBIT GRID (censorship hall of fame)
+     ============================================================ */
+  .exhibit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+    gap: 2rem;
+    flex: 1;
+    min-height: 0;
+    margin-top: 0.5rem;
+  }
+  .slide-image-hero {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    object-fit: contain;
+    display: block;
+    margin: 0.8rem 0;
+  }
+
+  /* ============================================================
+     RETRO TV FRAME — wraps images / YouTube embeds to look like
+     they're playing on a 2000s-era CRT television. The frame
+     sizes to its content so the bezel fits the image snugly.
+     ============================================================ */
+  .tv-frame {
+    position: relative;
+    background: linear-gradient(180deg, #2c2c2c 0%, #111 60%, #0a0a0a 100%);
+    padding: 16px 22px 56px 22px;
+    border-radius: 18px 18px 22px 22px / 18px 18px 28px 28px;
+    box-shadow:
+      inset 0 2px 4px rgba(255,255,255,0.08),
+      inset 0 -3px 6px rgba(0,0,0,0.6),
+      0 8px 0 #030303,
+      0 14px 26px rgba(0,0,0,0.5);
+    display: inline-block;
+    max-width: 100%;
+    align-self: center;
+    margin: 0 auto;
+    min-width: 0;
+  }
+  /* speaker grille — bottom left */
+  .tv-frame::before {
+    content: "";
+    position: absolute;
+    bottom: 22px;
+    left: 28px;
+    width: 80px;
+    height: 8px;
+    background:
+      radial-gradient(circle, #4a4a4a 0 1.6px, transparent 1.6px) 0 0 / 10px 8px;
+    opacity: 0.85;
+  }
+  /* control buttons — bottom right */
+  .tv-frame::after {
+    content: "";
+    position: absolute;
+    bottom: 18px;
+    right: 28px;
+    width: 14px;
+    height: 14px;
+    background: radial-gradient(circle at 30% 30%, #ff6666 0%, #b30000 75%);
+    border-radius: 50%;
+    box-shadow:
+      -22px 2px 0 -3px #888,
+      -40px 2px 0 -3px #666,
+      -56px 2px 0 -4px #555;
+  }
+  .tv-screen {
+    overflow: hidden;
+    border-radius: 12px 12px 18px 18px / 14px 14px 22px 22px;
+    background: #000;
+    position: relative;
+    box-shadow:
+      inset 0 0 0 2px #050505,
+      inset 0 0 28px rgba(0,0,0,0.65);
+    display: block;
+    line-height: 0;
+  }
+  .tv-screen > img,
+  .tv-screen > video {
+    display: block;
+    max-width: 100%;
+    max-height: 62vh;
+    width: auto;
+    height: auto;
+    border: 0;
+  }
+  .tv-screen > iframe {
+    display: block;
+    width: min(70vw, 880px);
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    background: #000;
+  }
+  /* faint CRT scanline overlay */
+  .tv-screen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(255,255,255,0.04) 0 1px,
+        transparent 1px 3px);
+    border-radius: inherit;
+  }
+  .exhibit-grid figure {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 0;
+    margin: 0;
+  }
+  .exhibit-grid > figure > img {
+    max-width: 100%;
+    max-height: 62vh;
+    object-fit: contain;
+    display: block;
+  }
+  .exhibit-grid figcaption {
+    margin-top: 0.7rem;
+    text-align: center;
+    color: var(--ink);
+    line-height: 1.25;
+  }
+  .exhibit-grid figcaption .show {
+    display: block;
+    font-family: Impact, "Arial Black", sans-serif;
+    text-transform: uppercase;
+    font-size: clamp(1rem, 1.4vw, 1.4rem);
+    letter-spacing: 1px;
+  }
+  .exhibit-grid figcaption .quote {
+    display: block;
+    margin-top: 0.2rem;
+    font-style: italic;
+    font-size: clamp(0.8rem, 1vw, 1rem);
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+<div class="counter" id="counter">1 / 22</div>
+<div class="help-hint">← → arrows · click · press N for notes</div>
+
+<div class="deck" id="deck">
+
+  <!-- =========================================================
+       SLIDE 1 — TITLE
+       ========================================================= -->
+  <section class="slide title-slide theme-ink active">
+    <img src="images/4kids_logo.png" class="logo">
+    <h2 style="margin-top:0.5rem;">A Short History of The Studio That Brought Anime to<br>Saturday Morning Television</h2>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 2 — WHAT WAS 4KIDS (expanded)
+       ========================================================= -->
+  <section class="slide theme-blue">
+    <h1>What was 4Kids?</h1>
+    <ul>
+      <li>New York based company</li>
+      <li>Started in <strong>1970</strong> as a merchandising and licensing company</li>
+      <li>Licensed, dubbed, edited and broadcasted Japanese and other international animation for American kids.</li>
+      <li>Aired Saturday mornings on <strong>Fox</strong> (and later the <strong>CW</strong>)</li>
+      <li>Active from the early '90s until they collapsed in 2012</li>
+    </ul>
+    <div class="callout">
+      <p>Their core: <strong>international animation is cheap to license and expensive to merchandise. Targeted shows that had merchandise potential — toys, plushies, trading cards, etc.</strong></p>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 3 — THE ROSTER (moved up, redesigned)
+       ========================================================= -->
+  <section class="slide theme-pink">
+    <h1>The 4Kids Roster</h1>
+    <img src="images/image.png" class="roster-image">
+  </section>
+
+  <!-- =========================================================
+       SLIDE 4 — POKÉMON COUP (merged with Pokémania)
+       ========================================================= -->
+  <section class="slide theme-yellow">
+    <h1>1998: The Pokémon Coup</h1>
+    <div class="two-col">
+      <div>
+        <ul>
+          <li>Pokémon series was a hard sell stateside. Nintendo of America was nervous about how Japanese it felt, no major US network jumped at it.</li>
+          <li>4Kids licensed the anime, music, merchandise, and broadcast rights into <em>one</em> deal</li>
+          <li>Premiered in <strong>syndication</strong>, September 1998. Within months: cards, toys, movies, cereal</li>
+        </ul>
+        <p style="font-size:0.95rem;font-style:italic;"><strong>Syndication</strong> = sold to individual local stations, not a national network. Lower-prestige but let 4Kids schedule flexibly and run their own toy ads in the breaks.</p>
+      </div>
+      <div class="tv-frame">
+        <div class="tv-screen">
+          <img src="images/pokemon.avif">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 5 — THE TOPPS CARDS
+       ========================================================= -->
+  <section class="slide theme-green">
+    <h1>Topps Pokemon Cards</h1>
+    <p>Topps reached out to 4Kids and licensed Pokemon from them. These could not compete with the original (TCG) cards, so there were no battle stats. Some of the cards were just screengrabs from the show</p>
+    <div class="exhibit-grid">
+      <figure>
+        <img src="images/4kidsPokemonTopps.jpeg">
+      </figure>
+      <figure>
+        <img src="images/4kidsPokemonTopps2.jpeg">
+      </figure>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 5 — YU-GI-OH
+       ========================================================= -->
+  <section class="slide theme-purple">
+    <h1>2001: Yu-Gi-Oh!</h1>
+    <div class="two-col">
+      <ul>
+        <li>Licensed the Yu-Gi-Oh! anime in 2001 (the "Duel Monsters" series)</li>
+        <li>Less of a cultural moment than Pokémon, but the <strong>Trading Card Game was enormous</strong></li>
+        <li>4Kids was making money in <em>both</em> trading card empires at once</li>
+      </ul>
+      <img src="images/yugioh.jpg" class="slide-image">
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 6 — WINX CLUB EUROPEAN IMPORT
+       ========================================================= -->
+  <section class="slide theme-pink">
+    <h1>Winx Club</h1>
+    <div class="two-col">
+      <div>
+        <ul>
+          <li>Italian production, made by <strong>Rainbow S.r.l.</strong></li>
+          <li>4Kids brought it to the US in <strong>2004</strong></li>
+          <li>Canadian English dub existed that was closer to the original Italian, 4kids created the "American" dub. 
+
+        </ul>
+      </div>
+      <img src="images/winxClubCover.jpg" class="slide-image">
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 7 — THE WINX DOLLS
+       ========================================================= -->
+  <section class="slide theme-purple">
+    <h1>The Winx Dolls</h1>
+    <img src="images/winx4kidsDolls.webp" class="slide-image-hero" style="align-self:center;max-width:100%;">
+  </section>
+
+  <!-- =========================================================
+       SLIDE 8 — LOCALIZATION PHILOSOPHY (+ Paul Taylor)
+       ========================================================= -->
+  <section class="slide theme-ink">
+    <h1>The Localization Philosophy</h1>
+    <ul>
+      <li>4Kids didn't just translate shows, they Americanized them</li>
+      <li>Audience: American kids, broadcast TV, ages 6–12</li>
+      <li>Constraints: <strong>FCC standards, Saturday-morning ad sensibilities, syndication-friendly runtimes</strong></li>
+      <li>Result: Censorship of anything not kid-friendly, but also some odd changes due to cultural differences.</li>
+    </ul>
+    <div class="callout">
+      <p>Translation: "What does this Japanese line mean?"<br>Localization: "What would an American kid <em>say</em> in this scene?"<br>4Kids: "What if there were never any Japanese kids in this scene at all?"</p>
+    </div>
+    <p style="margin-top:1rem;"><strong>Paul Taylor</strong> — head Japanese-to-English translator at 4Kids. Served an LDS mission in Japan, then went on to write the English scripts for, among other things, <em>Pokémon</em>.</p>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 8 — EXHIBIT A: THE CENSORSHIP HALL OF FAME
+       ========================================================= -->
+  <section class="slide theme-yellow">
+    <h1>Exhibit A: Jelly Donuts</h1>
+    <div class="exhibit-grid">
+      <figure>
+        <div class="tv-frame">
+          <div class="tv-screen">
+            <img src="images/magicaldoremi_coconut.png">
+          </div>
+        </div>
+        <figcaption>
+          <span class="show">Magical DoReMi</span>
+          <span class="quote">"She stayed up all night making coconut puffs!"</span>
+        </figcaption>
+      </figure>
+      <figure>
+        <div class="tv-frame">
+          <div class="tv-screen">
+            <img src="images/Brock-Donuts.avif">
+          </div>
+        </div>
+        <figcaption>
+          <span class="show">Pokémon</span>
+          <span class="quote">"These donuts are great! Jelly-filled are my favorite!"</span>
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 9 — ONE PIECE (its own slide)
+       ========================================================= -->
+  <section class="slide theme-blue">
+    <h1>Exhibit B: One Piece</h1>
+    <div class="exhibit-grid">
+      <figure>
+        <div class="tv-frame" style="display:block;width:100%;">
+          <div class="tv-screen">
+            <img src="images/onePieceCensorship.jpeg" style="width:100%;height:auto;max-height:none;">
+          </div>
+        </div>
+      </figure>
+      <figure>
+        <div class="tv-frame">
+          <div class="tv-screen">
+            <img src="images/onePieceMoreCensorship.png">
+          </div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 10 — EXHIBIT C: THE ONE THEY GOT RIGHT
+       ========================================================= -->
+  <section class="slide theme-green">
+    <h1>Exhibit C: The One 4Kids Got Right</h1>
+    <div class="tv-frame">
+      <div class="tv-screen">
+        <img src="images/winxClubAfroGirl.jpg">
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 11 — IN THEIR DEFENSE (reputation angle)
+       ========================================================= -->
+  <section class="slide theme-blue">
+    <h1>In Their Defense…</h1>
+    <div class="two-col">
+      <div>
+        <ul>
+          <li>All of those changes gave 4Kids a <strong>complicated reputation.</strong></li>
+          <li>"4Kids dub" became a <em>pejorative</em> in anime circles</li>
+          <li>Purists call the localizations butchered, prefer the subs or any other dub</li>
+          <li>The backlash was sharpest for <strong>Winx Club</strong> and <strong>One Piece</strong></li>
+        </ul>
+        <p style="font-style:italic;margin-top:-0.4rem;">It got so bad that <strong>One Piece fans made accounts on the Winx Club Online Forums</strong> just to vent</p>
+        <div class="callout">
+          <p><strong>My take:</strong>That's a little harsh. 4Kids did they best they could in the constraints they were given and culture of the time.</p>
+          <p style="margin-top:0.6rem;">For the kids who grew up on it, those dubs <em>are</em> the show.</p>
+        </div>
+      </div>
+      <img src="images/davoOnePieceJapan.png" class="slide-image">
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 11 — MUSIC INTRO
+       ========================================================= -->
+  <section class="slide theme-ink">
+    <h1>The music.</h1>
+    <p>Even if the dubs are controversial, the <strong>music</strong> is where 4Kids is undefeated.</p>
+    <ul>
+      <li>4Kids replaced Japanese openings with <strong>original English themes</strong> — written specifically for the US audience</li>
+      <li>The in-house music team included <strong>John Siegler</strong>, <strong>Russell Velazquez</strong>, and <strong>John Loeffler</strong></li>
+      <li>People still credit 4kids for having the most iconic theme songs for multiple shows.</li>
+    </ul>
+  </section>
+
+
+    <!-- =========================================================
+       SLIDE 13 — YU-GI-OH THEME (+ Davo honeymoon)
+       ========================================================= -->
+  <section class="slide theme-purple">
+    <h1>Yu-Gi-Oh! Theme</h1>
+    <div class="two-col">
+      <div>
+        <p class="quote-big">"It's time to D-D-D-D-Ddddddduel"</p>
+        <ul>
+          <li>Performed by Wayne Sharpe (composer) with vocals credited to <strong>Russell Velazquez</strong></li>
+        </ul>
+      </div>
+      <div class="tv-frame" style="display:block;width:100%;">
+        <div class="tv-screen">
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/WHUcHw7j2Mc?si=EO1tzcyokDI_PGFe" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="width:100%;"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+     <!-- =========================================================
+       SLIDE 13 — Winx THEME
+       ========================================================= -->
+  <section class="slide theme-pink">
+    <h1>Winx Club Theme</h1>
+    <div class="two-col">
+      <div>
+        <p class="quote-big">"We are the Winx"</p>
+        <ul>
+          <li>Ironically a close second favorite of the community because everyone agrees the German version slaps</li>
+          <li>This is my childhood.</li>
+        </ul>
+      </div>
+      <div class="tv-frame" style="display:block;width:100%;">
+        <div class="tv-screen">
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/uN7Ru-iLrR8?si=UWUMrY-f_P7m9I8Y" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="width:100%;"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+    <!-- =========================================================
+       SLIDE 14 — ONE PIECE "PIRATE RAP"
+       ========================================================= -->
+  <section class="slide theme-blue">
+    <h1>One Piece Theme</h1>
+    <div class="two-col">
+      <div>
+        <p style="font-size:1.3rem;">The Pirate Rap - "Don't give it up Luffy!"</p>
+        <ul>
+          <li>Very mixed feelings on this one, some hate it, some say "it's f***ing glorious."</li>
+        </ul>
+      </div>
+      <div class="tv-frame" style="display:block;width:100%;">
+        <div class="tv-screen">
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/RSe8D2wfGKI?si=6S3ttoUG-zEnQj6g&amp;start=30" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="width:100%;"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 12 — POKÉMON THEME
+       ========================================================= -->
+  <section class="slide theme-yellow">
+    <h1>Pokémon Theme</h1>
+    <div class="two-col">
+      <div>
+        <p class="quote-big">"I wanna be the very best<br>like no one ever was..."</p>
+        <ul>
+          <li>Written by <strong>John Siegler</strong> and <strong>John Loeffler</strong></li>
+          <li>Performed by <strong>Jason Paige</strong></li>
+          <li>Released 1999 on the <em>2.B.A. Master</em> album</li>
+        </ul>
+      </div>
+      <div class="tv-frame" style="display:block;width:100%;">
+        <div class="tv-screen">
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/6xKWiCMKKJg?si=6z1yJKfY1SMSyzlv&amp;start=30" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="width:100%;"></iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 15 — THE FALL
+       ========================================================= -->
+  <section class="slide theme-ink">
+    <h1>The Fall</h1>
+    <div class="two-col">
+      <ul>
+        <li><strong>2006:</strong> 4Kids loses the Pokémon contract. The Pokémon Company International takes the franchise back in-house.</li>
+        <li><strong>2011:</strong> Lawsuit with <strong>TV Tokyo</strong> and <strong>ADK</strong> over Yu-Gi-Oh! royalties. 4Kids accused of underreporting income.</li>
+        <li><strong>April 2011:</strong> Files for <strong>Chapter 11 bankruptcy.</strong></li>
+        <li><strong>2012:</strong> Yu-Gi-Oh! rights sold off. The company is effectively done.</li>
+      </ul>
+      <img src="images/davoPokemonJapan.png" class="slide-image">
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 16 — LEGACY
+       ========================================================= -->
+  <section class="slide theme-green">
+    <h1>The Legacy</h1>
+    <div class="two-col">
+      <ul>
+        <li>Introduced anime to American kids.</li>
+        <li>Created a whole generation of kids toys</li>
+        <li>The "4Kids version" became a specific aesthetic and a specific era</li>
+        <li>Modern Pokémon, Yu-Gi-Oh!, and Winx Club <strong>all still build on what 4Kids established</strong></li>
+      </ul>
+      <div class="tv-frame" style="display:block;width:100%;">
+        <div class="tv-screen">
+          <img src="images/4kidsAnthem.png" style="width:100%;height:auto;max-height:none;">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 17 — PERSONAL: WINX (rewritten)
+       ========================================================= -->
+  <section class="slide theme-pink">
+    <h1>My 4kids History</h1>
+    <div class="two-col">
+      <div>
+        <ul>
+          <li>~2007: 6AM alarm set Saturday mornings for Magical Doremi and Winx Club
+          <li>~2009: On the website every day, watching episodes & playing PC games from the shows</li>
+          <li>~2010: Winx Club dub deep dive - 4kids>Canadian>Nickelodeon</li>
+          <li>4kids is the only version I consider canon due to the lore.</li>
+          <li>2021: Yu-Gi-Oh honeymoon - I realize Davo also grew up on 4kids</li>
+
+        </ul>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.8rem;min-height:0;">
+        <img src="images/winxClubPixies.png" class="slide-image" style="flex:1;">
+        <img src="images/magicalDoremi.jpg" class="slide-image" style="flex:1;">
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 18 — WHY IT STILL MATTERS (+ podcasts)
+       ========================================================= -->
+  <section class="slide theme-ink">
+    <h1>Credit Where Credit is Due</h1>
+    <p style="font-size:1.3rem;">4Kids was a <strong>vibe.</strong></p>
+    <div class="two-col">
+      <div>
+        <ul>
+          <li>Winx Club Forever Podcast - specifically for American "Winxers"</li>
+          <li>4kids Flash Back Podcast - interviews with former voice actors and employees</li>
+          <ul>
+            <li>Collecting "Lost Media"</li>
+            <li>Nostalgia as a science</li>
+          </ul>
+        </ul>
+      </div>
+      <img src="images/acaciamagicaldoremi.png" class="slide-image">
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SLIDE 19 — THANKS
+       ========================================================= -->
+  <section class="slide title-slide theme-pink">
+    <h1>Thanks!</h1>
+    <img src="images/4kids_logo.png" class="logo-small">
+  </section>
+
+</div>
+
+<aside class="notes-panel" id="notesPanel"></aside>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  const notesPanel = document.getElementById('notesPanel');
+  let current = 0;
+
+  function show(i) {
+    if (i < 0 || i >= slides.length) return;
+    slides[current].classList.remove('active');
+    current = i;
+    slides[current].classList.add('active');
+    counter.textContent = `${current + 1} / ${slides.length}`;
+    progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+    updateNotes();
+  }
+
+  function updateNotes() {
+    const noteEl = slides[current].querySelector('.speaker-notes');
+    notesPanel.innerHTML = noteEl ? noteEl.innerHTML : '<h3>No notes for this slide.</h3>';
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { show(current + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(current - 1); e.preventDefault(); }
+    else if (e.key === ' ') { show(current + 1); e.preventDefault(); }
+    else if (e.key === 'n' || e.key === 'N') { notesPanel.classList.toggle('visible'); }
+    else if (e.key === 'Home') { show(0); }
+    else if (e.key === 'End') { show(slides.length - 1); }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.notes-panel') || e.target.closest('.counter') || e.target.closest('.help-hint')) return;
+    show(current + 1);
+  });
+
+  // initialize
+  counter.textContent = `1 / ${slides.length}`;
+  progress.style.width = `${(1 / slides.length) * 100}%`;
+  updateNotes();
+</script>
+
+</body>
+</html>
