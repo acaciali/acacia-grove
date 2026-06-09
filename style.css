@@ -994,6 +994,7 @@ body.todo-page {
 body.todo-page {
   background: linear-gradient(180deg, #fff5f7 0%, #ffe9f0 100%);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .todo-main {
@@ -1012,9 +1013,16 @@ body.todo-page {
 
 .todo-form {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
   margin-bottom: 18px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.todo-form > * {
+  max-width: 100%;
+  min-width: 0;
 }
 
 .todo-form .todo-title-input,
@@ -1023,6 +1031,8 @@ body.todo-page {
 }
 
 .todo-form input {
+  min-width: 0;
+  width: 100%;
   min-height: var(--tap);
   padding: 0 14px;
   border: 1px solid var(--line);
@@ -1048,6 +1058,8 @@ body.todo-page {
 }
 
 .todo-add-btn {
+  min-width: 0;
+  width: 100%;
   min-height: var(--tap);
   padding: 0 20px;
   border: none;
