@@ -976,3 +976,230 @@ main {
 .status[data-kind="error"] {
   background: var(--warn);
 }
+
+/* --- Todo List (pink theme, scoped to .todo-page) --- */
+body.todo-page {
+  --bg: #fff5f7;
+  --surface: #ffffff;
+  --ink: #8b2c5c;
+  --ink-soft: #b78298;
+  --accent: #ec4b8a;
+  --accent-ink: #ffffff;
+  --warn: #d93a5b;
+  --line: #fadbe5;
+  --shadow: 0 1px 2px rgba(155, 47, 95, 0.05),
+    0 4px 14px rgba(236, 75, 138, 0.10);
+}
+
+body.todo-page {
+  background: linear-gradient(180deg, #fff5f7 0%, #ffe9f0 100%);
+  min-height: 100vh;
+}
+
+.todo-main {
+  padding: 16px 16px 48px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.todo-title {
+  margin: 8px 4px 16px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.todo-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.todo-form .todo-title-input,
+.todo-form .todo-add-btn {
+  grid-column: 1 / -1;
+}
+
+.todo-form input {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  outline: none;
+  font: inherit;
+  color: inherit;
+}
+
+.todo-form input::placeholder {
+  color: var(--ink-soft);
+}
+
+.todo-form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(236, 75, 138, 0.15);
+}
+
+.todo-form .todo-date-input {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.todo-add-btn {
+  min-height: var(--tap);
+  padding: 0 20px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.todo-add-btn:active {
+  transform: scale(0.99);
+}
+
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.todo-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.todo-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  min-height: var(--tap);
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+}
+
+.todo-box {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  border-radius: 6px;
+  border: 2px solid var(--line);
+  background: var(--bg);
+  position: relative;
+}
+
+.todo-row.checked .todo-box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.todo-row.checked .todo-box::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 6px;
+  height: 12px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.todo-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.todo-name {
+  font-weight: 500;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.todo-row.checked .todo-name {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
+
+.todo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.todo-due {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fde4ee;
+  color: #8b2c5c;
+  font-weight: 600;
+}
+
+.todo-due.overdue {
+  background: #fde0e4;
+  color: var(--warn);
+}
+
+.todo-cat {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fce8f1;
+  color: #a4476f;
+  font-weight: 600;
+}
+
+.todo-row.checked .todo-due,
+.todo-row.checked .todo-cat {
+  opacity: 0.6;
+}
+
+.todo-delete {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  padding: 0 18px;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  align-self: stretch;
+}
+
+.todo-empty {
+  text-align: center;
+  color: var(--ink-soft);
+  padding: 32px 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+body.todo-page .clear-checked {
+  border-color: var(--line);
+  color: var(--ink-soft);
+}

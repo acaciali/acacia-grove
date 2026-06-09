@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#fff5f7" />
+    <title>Todo List</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="todo-page">
+    <main class="todo-main">
+      <h1 class="todo-title">Todo List</h1>
+
+      <form class="todo-form" id="add-form" autocomplete="off">
+        <input
+          id="new-todo"
+          class="todo-title-input"
+          type="text"
+          placeholder="Add a todo…"
+          aria-label="New todo"
+          required
+        />
+        <input
+          id="new-todo-date"
+          class="todo-date-input"
+          type="date"
+          aria-label="Due date (optional)"
+        />
+        <input
+          id="new-todo-category"
+          class="todo-cat-input"
+          type="text"
+          placeholder="Category (optional)"
+          aria-label="Category (optional)"
+          list="todo-categories"
+        />
+        <datalist id="todo-categories"></datalist>
+        <button class="todo-add-btn" type="submit">Add</button>
+      </form>
+
+      <ul class="todo-list" id="todo-list"></ul>
+
+      <button class="clear-checked" id="clear-checked" hidden>
+        Clear completed
+      </button>
+    </main>
+
+    <div class="status" id="status" hidden></div>
+
+    <script type="module" src="./todolist.js"></script>
+  </body>
+</html>

@@ -26,5 +26,9 @@ service cloud.firestore {
     match /counters/{id} {
       allow read, create, update, delete: if true;
     }
+
+    match /todos/{id} {
+      allow read, create, update, delete: if true;
+    }
   }
 }
