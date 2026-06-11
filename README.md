@@ -24,8 +24,12 @@ Firebase Firestore, hosted on GitHub Pages. No build step.
   credit $10. Dismissed once per device per user per day.
 - Undo writes a *reversing* history entry rather than editing/deleting the
   original — history is append-only.
-- Balance for a user/bucket = sum of all `amount` fields where userId and
-  bucketId match. Reversals cancel naturally (opposite sign).
+- Balance for a user/bucket is kept in the `balances` collection (one doc per
+  user+bucket), incremented atomically in the same batch as every history
+  write. Reversals cancel naturally (opposite sign). Balances are **not**
+  recomputed by summing the visible history — that list is capped at 200
+  entries for display, so summing it would silently drop old deposits once
+  total activity passed 200 entries.
 - Negative balances are allowed and shown in red.
 - The `Month Money` bucket is the default; it can be renamed but not archived.
   Custom buckets can be archived (soft-deleted) so their history still
@@ -92,8 +96,12 @@ edit chores and buckets later via the **Manage** sections at the bottom.
 
 ## Notes
 
-- History is fetched with `limit(200)`. If you outgrow that, add a "Load more"
-  button — until then, two users on Firestore's free tier are nowhere near
-  any quota.
+- History is fetched with `limit(200)` for the Recent list only; balances are
+  read from the `balances` collection, so the cap never affects the math. If
+  you outgrow 200 for display, add a "Load more" button.
+- `seed.html` has a **Recompute balances** button that re-sums the full history
+  and rewrites the `balances` collection. Run it once to migrate existing
+  installs to aggregated balances; safe to re-run any time the two get out of
+  sync.
 - Firebase JS SDK is loaded from `gstatic.com` at a pinned version (`10.13.0`
   in `app.js`). Bump it intentionally if needed.

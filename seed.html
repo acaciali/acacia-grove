@@ -89,6 +89,17 @@
         Recategorize existing chores
       </button>
 
+      <h2 style="margin-top:32px;font-size:18px">Recompute balances</h2>
+      <p style="color:var(--ink-soft);font-size:14px">
+        Re-sums the full history (no 200-entry cap) and rewrites every
+        user+bucket balance. Run this once to migrate existing data to
+        aggregated balances and to recover deposits that the old balance code
+        dropped. Safe to re-run.
+      </p>
+      <button class="seed-btn" id="recompute-btn" style="background:var(--ink)">
+        Recompute balances from full history
+      </button>
+
       <div class="seed-log" id="log" hidden></div>
 
       <a class="seed-link" href="./index.html">→ Back to the app</a>

@@ -7,6 +7,7 @@ import {
   setDoc,
   updateDoc,
   writeBatch,
+  increment,
   query,
   orderBy,
   limit,
@@ -45,10 +46,18 @@ const state = {
   buckets: [],
   chores: [],
   history: [],
+  balances: {},
   itemCounts: {},
   search: "",
   defaultBucketEnsured: false,
 };
+
+// Aggregated balances live in the `balances` collection, one doc per
+// user+bucket, updated atomically alongside every history write. This keeps
+// balances correct even though the history listener is capped at limit(200)
+// for display — summing the truncated history would silently drop old
+// deposits once total activity passed 200 entries.
+const balanceDocId = (userId, bucketId) => `${userId}__${bucketId}`;
 
 const ITEM_GOAL = 20;
 const itemCounterDocId = (userId) => `items-${userId}`;
@@ -213,13 +222,7 @@ async function ensureDefaultBucket() {
 
 // ---------- Balance computation ----------
 function balanceFor(userId, bucketId) {
-  let sum = 0;
-  for (const h of state.history) {
-    if (h.userId !== userId) continue;
-    if ((h.bucketId || DEFAULT_BUCKET_ID) !== bucketId) continue;
-    sum += Number(h.amount) || 0;
-  }
-  return sum;
+  return Number(state.balances[balanceDocId(userId, bucketId)]) || 0;
 }
 
 function computeReversals(history) {
@@ -480,14 +483,32 @@ function renderManageBuckets() {
 }
 
 // ---------- Actions ----------
+// Adds a history doc and the matching balance increment to a batch, so the
+// append-only ledger and the aggregated balance always move together. Returns
+// the new history doc ref.
+function writeHistoryToBatch(batch, entry) {
+  const bucketId = entry.bucketId || state.activeBucket;
+  const amount = Number(entry.amount) || 0;
+  const ref = doc(collection(db, "history"));
+  batch.set(ref, {
+    ...entry,
+    bucketId,
+    amount,
+    createdAt: serverTimestamp(),
+  });
+  batch.set(
+    doc(db, "balances", balanceDocId(entry.userId, bucketId)),
+    { userId: entry.userId, bucketId, balance: increment(amount) },
+    { merge: true },
+  );
+  return ref;
+}
+
 async function addHistory(entry) {
   try {
-    await addDoc(collection(db, "history"), {
-      ...entry,
-      bucketId: entry.bucketId || state.activeBucket,
-      amount: Number(entry.amount),
-      createdAt: serverTimestamp(),
-    });
+    const batch = writeBatch(db);
+    writeHistoryToBatch(batch, entry);
+    await batch.commit();
   } catch (err) {
     console.error(err);
     toast("Couldn't save — check connection", "error");
@@ -619,7 +640,7 @@ async function undo(historyId) {
     );
     try {
       const batch = writeBatch(db);
-      batch.set(doc(collection(db, "history")), {
+      writeHistoryToBatch(batch, {
         userId: original.userId,
         type: "transfer",
         amount: -(Number(original.amount) || 0),
@@ -627,10 +648,9 @@ async function undo(historyId) {
         otherBucketId: original.otherBucketId ?? null,
         transferId: original.transferId,
         reversesId: original.id,
-        createdAt: serverTimestamp(),
       });
       if (paired) {
-        batch.set(doc(collection(db, "history")), {
+        writeHistoryToBatch(batch, {
           userId: paired.userId,
           type: "transfer",
           amount: -(Number(paired.amount) || 0),
@@ -638,7 +658,6 @@ async function undo(historyId) {
           otherBucketId: paired.otherBucketId ?? null,
           transferId: paired.transferId,
           reversesId: paired.id,
-          createdAt: serverTimestamp(),
         });
       }
       await batch.commit();
@@ -869,23 +888,21 @@ async function submitTransfer(e) {
   const transferId = `tx-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   try {
     const batch = writeBatch(db);
-    batch.set(doc(collection(db, "history")), {
+    writeHistoryToBatch(batch, {
       userId: state.activeUser,
       type: "transfer",
       amount: -Math.abs(amount),
       bucketId: fromId,
       otherBucketId: toId,
       transferId,
-      createdAt: serverTimestamp(),
     });
-    batch.set(doc(collection(db, "history")), {
+    writeHistoryToBatch(batch, {
       userId: state.activeUser,
       type: "transfer",
       amount: Math.abs(amount),
       bucketId: toId,
       otherBucketId: fromId,
       transferId,
-      createdAt: serverTimestamp(),
     });
     await batch.commit();
     closeTransferModal();
@@ -1126,6 +1143,8 @@ onSnapshot(collection(db, "buckets"), (snap) => {
   render();
 });
 
+// Display list only — capped at 200. Balances come from the `balances`
+// collection, not from summing this truncated set.
 onSnapshot(
   query(collection(db, "history"), orderBy("createdAt", "desc"), limit(200)),
   (snap) => {
@@ -1133,6 +1152,15 @@ onSnapshot(
     render();
   },
 );
+
+onSnapshot(collection(db, "balances"), (snap) => {
+  const next = {};
+  for (const d of snap.docs) {
+    next[d.id] = Number(d.data().balance) || 0;
+  }
+  state.balances = next;
+  render();
+});
 
 onSnapshot(collection(db, "counters"), (snap) => {
   const next = {};

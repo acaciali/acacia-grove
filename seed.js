@@ -84,9 +84,12 @@ const MONTH_MONEY_START = [
   { userId: "acacia", amount: -26 },
 ];
 
+const balanceDocId = (userId, bucketId) => `${userId}__${bucketId}`;
+
 const $status = document.getElementById("status");
 const $btn = document.getElementById("seed-btn");
 const $recategorize = document.getElementById("recategorize-btn");
+const $recompute = document.getElementById("recompute-btn");
 const $log = document.getElementById("log");
 
 function log(line) {
@@ -195,6 +198,10 @@ async function seedAll() {
       log(`  + ${name} ($${amount}, ${category})`);
     }
 
+    log("\nComputing aggregated balances…");
+    const totals = await recomputeBalances();
+    log(`  wrote ${Object.keys(totals).length} balance docs`);
+
     log("\nDone. Open the app and tap your name to start.");
     $status.innerHTML = `<div class="seed-warn">Seeded successfully. You can close this page.</div>`;
   } catch (err) {
@@ -237,6 +244,50 @@ async function recategorize() {
   }
 }
 
+// Sums the FULL history (no limit) per user+bucket and writes one balances
+// doc per pair. This is the source of truth for the app's balances and the
+// recovery path: it restores deposits that the old limit(200) balance code
+// silently dropped once total activity passed 200 entries.
+async function recomputeBalances() {
+  const snap = await getDocs(collection(db, "history"));
+  const totals = {};
+  for (const d of snap.docs) {
+    const h = d.data();
+    if (!h.userId) continue;
+    const bucketId = h.bucketId || DEFAULT_BUCKET_ID;
+    const key = balanceDocId(h.userId, bucketId);
+    if (!totals[key]) totals[key] = { userId: h.userId, bucketId, balance: 0 };
+    totals[key].balance += Number(h.amount) || 0;
+  }
+  for (const [key, val] of Object.entries(totals)) {
+    await setDoc(doc(db, "balances", key), val);
+  }
+  return totals;
+}
+
+async function recomputeBalancesAndLog() {
+  $recompute.disabled = true;
+  $log.textContent = "";
+  log("Reading full history and recomputing balances…");
+  try {
+    const totals = await recomputeBalances();
+    const rows = Object.values(totals).sort(
+      (a, b) =>
+        a.userId.localeCompare(b.userId) || a.bucketId.localeCompare(b.bucketId),
+    );
+    for (const r of rows) {
+      log(`  ${r.userId} / ${r.bucketId}: $${r.balance.toFixed(2)}`);
+    }
+    log(`\nDone. Wrote ${rows.length} balance docs from the full history.`);
+  } catch (err) {
+    console.error(err);
+    log(`\nERROR: ${err.message}`);
+  } finally {
+    $recompute.disabled = false;
+  }
+}
+
 $btn.addEventListener("click", seedAll);
 $recategorize.addEventListener("click", recategorize);
+$recompute.addEventListener("click", recomputeBalancesAndLog);
 refresh();

@@ -19,6 +19,13 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Aggregated balances (one doc per user+bucket). Written atomically with
+    // each history entry; recompute rewrites them from full history.
+    match /balances/{id} {
+      allow read, create, update: if true;
+      allow delete: if false;
+    }
+
     match /groceries/{id} {
       allow read, create, update, delete: if true;
     }
