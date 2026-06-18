@@ -260,37 +260,45 @@ main {
 /* --- Item counter widget --- */
 .item-counter-section {
   margin-top: 10px;
+  display: flex;
+  justify-content: center;
 }
 
 .item-counter-btn {
-  width: 100%;
-  min-height: var(--tap);
+  width: auto;
+  min-width: 120px;
+  min-height: 72px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 0 16px;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 24px;
   border: none;
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink);
   font-weight: 600;
-  font-size: 16px;
   box-shadow: var(--shadow);
   cursor: pointer;
 }
 
 .item-counter-btn:active {
-  transform: scale(0.99);
+  transform: scale(0.97);
 }
 
 .item-counter-label {
-  color: var(--ink);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .item-counter-count {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
+  font-size: 24px;
   color: var(--ink);
 }
 
@@ -522,13 +530,33 @@ main {
   margin-top: 28px;
 }
 
-.history h2 {
+.history details > summary {
+  list-style: none;
+  cursor: pointer;
   font-size: 14px;
   font-weight: 600;
   color: var(--ink-soft);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin: 0 4px 8px;
+  padding: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.history details > summary::before {
+  content: "▾";
+  font-size: 12px;
+  transition: transform 0.15s ease;
+}
+
+.history details:not([open]) > summary::before {
+  transform: rotate(-90deg);
 }
 
 .history-empty,
@@ -664,12 +692,35 @@ main {
 }
 
 .manage-row.bucket {
-  grid-template-columns: 1fr 80px auto auto;
+  grid-template-columns: 90px 1fr auto;
+  grid-template-areas:
+    "name name name"
+    "goal owner archive";
+  gap: 8px 10px;
+  align-items: center;
+  padding: 10px 14px;
+}
+
+.manage-row.bucket [data-field="name"] {
+  grid-area: name;
+  font-weight: 600;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
 }
 
 .manage-row.bucket .bucket-goal-input {
+  grid-area: goal;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.manage-row.bucket .owner-btn {
+  grid-area: owner;
+  justify-self: start;
+}
+
+.manage-row.bucket .archive-btn {
+  grid-area: archive;
 }
 
 .manage-row.bucket .bucket-goal-input::placeholder {
@@ -770,6 +821,58 @@ main {
 .modal-field select:focus,
 .modal-field input:focus {
   border-color: var(--ink);
+}
+
+/* --- Number picker (custom amount) --- */
+.custom-display {
+  text-align: center;
+  font-size: 40px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin: 0 0 14px;
+}
+
+.number-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 0 0 20px;
+}
+
+.number-picker button {
+  min-height: 56px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.number-picker button:active {
+  transform: scale(0.96);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+.number-picker .key-action {
+  font-size: 18px;
+  color: var(--ink-soft);
+}
+
+.number-picker .key-enter {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
 }
 
 .manage-row.archived {

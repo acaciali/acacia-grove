@@ -101,6 +101,11 @@ const $transferAmount = document.getElementById("transfer-amount");
 const $transferCancel = document.getElementById("transfer-cancel");
 const $itemCounterBtn = document.getElementById("item-counter-btn");
 const $itemCounterCount = document.getElementById("item-counter-count");
+const $customModal = document.getElementById("custom-modal");
+const $customBody = document.getElementById("custom-body");
+const $customPicker = document.getElementById("custom-picker");
+const $customCancel = document.getElementById("custom-cancel");
+const $customDisplay = document.getElementById("custom-display");
 
 // ---------- Helpers ----------
 const fmt = (n) => {
@@ -360,6 +365,7 @@ function renderHistory() {
   }
 
   $historyList.innerHTML = mine
+    .slice(0, 10)
     .map((h) => {
       const isReversed = reversedIds.has(h.id);
       const isReverser = reverserIds.has(h.id);
@@ -591,18 +597,51 @@ async function tapQuick(amount) {
   toast(`+${fmt(amount)} → ${bucketName(state.activeBucket)}`);
 }
 
-async function tapCustom() {
-  const raw = window.prompt(
-    `Add to ${bucketName(state.activeBucket)} for ${userName(
-      state.activeUser,
-    )}:`,
-  );
-  if (raw === null) return;
-  const amount = parseFloat(raw);
+// Digits typed into the custom keypad (no leading zeros). Max 4 digits keeps
+// amounts sane.
+let customDigits = "";
+
+function renderCustomDisplay() {
+  const amount = parseInt(customDigits, 10) || 0;
+  $customDisplay.textContent = `$${amount}`;
+}
+
+function openCustomModal() {
+  $customBody.textContent = `Add to ${bucketName(state.activeBucket)} for ${userName(
+    state.activeUser,
+  )}:`;
+  customDigits = "";
+  renderCustomDisplay();
+  $customModal.hidden = false;
+}
+
+function closeCustomModal() {
+  $customModal.hidden = true;
+}
+
+function pressCustomKey(key) {
+  if (key === "enter") {
+    applyCustom(parseInt(customDigits, 10) || 0);
+    return;
+  }
+  if (key === "back") {
+    customDigits = customDigits.slice(0, -1);
+    renderCustomDisplay();
+    return;
+  }
+  // A digit: ignore a leading zero, cap length.
+  if (customDigits === "" && key === "0") return;
+  if (customDigits.length >= 4) return;
+  customDigits += key;
+  renderCustomDisplay();
+}
+
+async function applyCustom(amount) {
   if (!isFinite(amount) || amount <= 0) {
     toast("Enter an amount above 0", "error");
     return;
   }
+  closeCustomModal();
   await addHistory({
     userId: state.activeUser,
     type: "custom",
@@ -935,7 +974,13 @@ $bucketList.addEventListener("click", (e) => {
 
 $monthBtn.addEventListener("click", tapMonth);
 $holidayBtn.addEventListener("click", tapHoliday);
-$customBtn.addEventListener("click", tapCustom);
+$customBtn.addEventListener("click", openCustomModal);
+$customCancel.addEventListener("click", closeCustomModal);
+$customPicker.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-key]");
+  if (!btn) return;
+  pressCustomKey(btn.dataset.key);
+});
 $spendForm.addEventListener("submit", submitSpend);
 
 document.querySelectorAll(".quick-btn").forEach((btn) => {

@@ -43,7 +43,7 @@
 
       <section class="item-counter-section" aria-label="Items put away">
         <button class="item-counter-btn" id="item-counter-btn" type="button">
-          <span class="item-counter-label">Items put away</span>
+          <span class="item-counter-label">Items</span>
           <span class="item-counter-count" id="item-counter-count">0/20</span>
         </button>
       </section>
@@ -69,7 +69,7 @@
       </section>
 
       <section class="chores">
-        <details id="chores-details" open>
+        <details id="chores-details">
           <summary>Chores</summary>
           <input
             class="search"
@@ -83,8 +83,10 @@
       </section>
 
       <section class="history">
-        <h2>Recent</h2>
-        <ul class="history-list" id="history-list"></ul>
+        <details id="history-details">
+          <summary>Recent</summary>
+          <ul class="history-list" id="history-list"></ul>
+        </details>
       </section>
 
       <section class="manage">
@@ -138,6 +140,31 @@
         <div class="modal-actions">
           <button class="modal-btn dismiss" id="holiday-dismiss" type="button">Not now</button>
           <button class="modal-btn apply" id="holiday-apply" type="button">Add $10</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="custom-modal" hidden role="dialog" aria-modal="true" aria-labelledby="custom-title">
+      <div class="modal-card">
+        <h2 id="custom-title" class="modal-title">Add custom</h2>
+        <p class="modal-body" id="custom-body"></p>
+        <div class="custom-display" id="custom-display" aria-live="polite">$0</div>
+        <div class="number-picker" id="custom-picker">
+          <button type="button" data-key="1">1</button>
+          <button type="button" data-key="2">2</button>
+          <button type="button" data-key="3">3</button>
+          <button type="button" data-key="4">4</button>
+          <button type="button" data-key="5">5</button>
+          <button type="button" data-key="6">6</button>
+          <button type="button" data-key="7">7</button>
+          <button type="button" data-key="8">8</button>
+          <button type="button" data-key="9">9</button>
+          <button type="button" class="key-action" data-key="back" aria-label="Delete">⌫</button>
+          <button type="button" data-key="0">0</button>
+          <button type="button" class="key-action key-enter" data-key="enter" aria-label="Add">Add</button>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn dismiss" id="custom-cancel" type="button">Cancel</button>
         </div>
       </div>
     </div>
