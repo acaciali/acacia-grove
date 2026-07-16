@@ -725,6 +725,7 @@ main {
 }
 
 .chore-form input {
+  min-width: 0;
   min-height: var(--tap);
   padding: 0 12px;
   border: 1px solid var(--line);
@@ -781,6 +782,7 @@ main {
 }
 
 .bucket-form input {
+  min-width: 0;
   min-height: var(--tap);
   padding: 0 12px;
   border: 1px solid var(--line);
