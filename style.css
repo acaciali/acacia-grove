@@ -822,11 +822,11 @@ main {
 }
 
 .manage-row.bucket {
-  grid-template-columns: 90px 1fr auto auto;
+  grid-template-columns: 1fr 1fr 1fr;
   grid-template-areas:
-    "name name name name"
-    "goal owner archive delete";
-  gap: 8px 10px;
+    "name name goal"
+    "owner archive delete";
+  gap: 8px;
   align-items: center;
   padding: 10px 14px;
 }
@@ -842,6 +842,8 @@ main {
   grid-area: goal;
   text-align: right;
   font-variant-numeric: tabular-nums;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
 }
 
 /* Default jar: name is fixed text and it has no goal field. */
@@ -853,9 +855,17 @@ main {
   align-self: center;
 }
 
+.manage-row.bucket .owner-btn,
+.manage-row.bucket .archive-btn,
+.manage-row.bucket .delete-btn {
+  min-width: 0;
+  justify-self: stretch;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
 .manage-row.bucket .owner-btn {
   grid-area: owner;
-  justify-self: start;
 }
 
 .manage-row.bucket .archive-btn {
