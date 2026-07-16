@@ -6,9 +6,11 @@ import {
   addDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   writeBatch,
   increment,
   query,
+  where,
   orderBy,
   limit,
   onSnapshot,
@@ -46,6 +48,8 @@ const state = {
   buckets: [],
   chores: [],
   history: [],
+  monthHistory: [],
+  tombstones: [],
   balances: {},
   itemCounts: {},
   search: "",
@@ -87,11 +91,8 @@ const $bucketForm = document.getElementById("bucket-form");
 const $newBucketName = document.getElementById("new-bucket-name");
 const $manageBuckets = document.getElementById("manage-buckets");
 const $status = document.getElementById("status");
-const $holidayModal = document.getElementById("holiday-modal");
-const $holidayTitle = document.getElementById("holiday-title");
-const $holidayBody = document.getElementById("holiday-body");
-const $holidayApply = document.getElementById("holiday-apply");
-const $holidayDismiss = document.getElementById("holiday-dismiss");
+const $holidayList = document.getElementById("holiday-list");
+const $monthlySummary = document.getElementById("monthly-summary");
 const $transferBtn = document.getElementById("transfer-btn");
 const $transferModal = document.getElementById("transfer-modal");
 const $transferForm = document.getElementById("transfer-form");
@@ -147,7 +148,9 @@ function bucketName(id) {
 
 function isVisibleToUser(bucket, userId) {
   if (bucket.archived) return false;
-  if (!bucket.owner) return true; // shared
+  // The default jar is shown to both users (each has their own balance in it).
+  // Every other bucket belongs to exactly one user.
+  if (bucket.id === DEFAULT_BUCKET_ID) return true;
   return bucket.owner === userId;
 }
 
@@ -175,6 +178,15 @@ function ensureActiveBucketValid() {
     state.activeBucket = fallback.id;
     localStorage.setItem("activeBucket", state.activeBucket);
   }
+}
+
+function isThisMonth(date) {
+  if (!date) return false;
+  const now = new Date();
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth()
+  );
 }
 
 function timeAgo(date) {
@@ -262,6 +274,86 @@ function render() {
   renderHistory();
   renderManage();
   renderManageBuckets();
+  renderMonthlySummary();
+}
+
+// Per-user summary of the current calendar month. Earned/spent come from the
+// month-scoped history listener (transfers between buckets are internal, so
+// excluded); "spent on" lists the buckets the active user closed out —
+// archived or deleted — this month, with how much had accumulated in each.
+// The isThisMonth guard keeps totals correct if the app stays open across a
+// month boundary (the query's lower bound is fixed at attach time).
+function renderMonthlySummary() {
+  const userId = state.activeUser;
+  let earned = 0;
+  let spent = 0;
+  for (const h of state.monthHistory) {
+    if (h.userId !== userId || h.type === "transfer") continue;
+    const when = h.createdAt?.toDate ? h.createdAt.toDate() : null;
+    if (!isThisMonth(when)) continue;
+    const amt = Number(h.amount) || 0;
+    if (h.type === "spend") spent += -amt;
+    else earned += amt;
+  }
+
+  const spentOn = [];
+  for (const b of state.buckets) {
+    if (!b.archived || (b.owner && b.owner !== userId)) continue;
+    const when = b.archivedAt?.toDate ? b.archivedAt.toDate() : null;
+    if (!isThisMonth(when)) continue;
+    spentOn.push({
+      name: b.name,
+      amount: balanceFor(userId, b.id),
+      status: "Archived",
+    });
+  }
+  for (const t of state.tombstones) {
+    if (t.owner && t.owner !== userId) continue;
+    const when = t.deletedAt?.toDate ? t.deletedAt.toDate() : null;
+    if (!isThisMonth(when)) continue;
+    spentOn.push({
+      name: t.name || "Deleted bucket",
+      amount: Number(t.balances?.[userId]) || 0,
+      status: "Deleted",
+    });
+  }
+  spentOn.sort((a, b) => a.name.localeCompare(b.name));
+
+  const monthLabel = new Date().toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+  const earnedStr = (earned >= 0 ? "+" : "") + fmt(earned);
+  const spentStr = spent > 0 ? "-" + fmt(spent) : fmt(spent);
+
+  const spentOnHtml = spentOn.length
+    ? spentOn
+        .map(
+          (s) => `
+        <li class="summary-bucket-row">
+          <span class="summary-bucket-name">${esc(s.name)}<span class="summary-bucket-status">${esc(
+            s.status,
+          )}</span></span>
+          <span class="summary-bucket-amount">${fmt(s.amount)}</span>
+        </li>`,
+        )
+        .join("")
+    : `<li class="summary-empty">No buckets closed out this month.</li>`;
+
+  $monthlySummary.innerHTML = `
+    <p class="summary-month">${esc(monthLabel)}</p>
+    <div class="summary-totals">
+      <div class="summary-stat">
+        <span class="summary-stat-label">Earned</span>
+        <span class="summary-stat-value positive">${earnedStr}</span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-stat-label">Spent</span>
+        <span class="summary-stat-value negative">${spentStr}</span>
+      </div>
+    </div>
+    <h4 class="summary-heading">Spent on</h4>
+    <ul class="summary-bucket-list">${spentOnHtml}</ul>`;
 }
 
 function renderItemCounter() {
@@ -281,7 +373,8 @@ function renderBuckets() {
     .map((b) => {
       const isActive = b.id === state.activeBucket;
       const bal = balanceFor(state.activeUser, b.id);
-      const goal = Number(b.goal) || 0;
+      // The default jar never carries a goal.
+      const goal = b.id === DEFAULT_BUCKET_ID ? 0 : Number(b.goal) || 0;
       const hasGoal = goal > 0;
       const pct = hasGoal
         ? Math.max(0, Math.min(100, (bal / goal) * 100))
@@ -350,17 +443,11 @@ function renderChores() {
 }
 
 function renderHistory() {
-  const mine = state.history.filter(
-    (h) =>
-      h.userId === state.activeUser &&
-      (h.bucketId || DEFAULT_BUCKET_ID) === state.activeBucket,
-  );
+  const mine = state.history.filter((h) => h.userId === state.activeUser);
   const { reversedIds, reverserIds } = computeReversals(state.history);
 
   if (mine.length === 0) {
-    $historyList.innerHTML = `<li class="history-empty">No activity in ${esc(
-      bucketName(state.activeBucket),
-    )} yet.</li>`;
+    $historyList.innerHTML = `<li class="history-empty">No activity yet.</li>`;
     return;
   }
 
@@ -380,10 +467,13 @@ function renderHistory() {
       const amtCls = amt >= 0 ? "positive" : "negative";
       const showUndo = !isReversed && !isReverser;
       const when = h.createdAt?.toDate ? timeAgo(h.createdAt.toDate()) : "";
+      const meta = [bucketName(h.bucketId || DEFAULT_BUCKET_ID), when]
+        .filter(Boolean)
+        .join(" · ");
       return `
         <li class="${cls}" data-id="${esc(h.id)}">
           <span class="history-label">${esc(labelFor(h))}${
-            when ? `<span class="history-meta">${esc(when)}</span>` : ""
+            meta ? `<span class="history-meta">${esc(meta)}</span>` : ""
           }</span>
           <span class="history-amount ${amtCls}">${
             amt >= 0 ? "+" : ""
@@ -442,17 +532,27 @@ function renderManage() {
 }
 
 function ownerLabel(owner) {
-  if (!owner) return "Shared";
+  if (!owner) return "Unassigned";
   return userName(owner);
 }
 
 function renderManageBuckets() {
-  const sorted = [...state.buckets].sort((a, b) => {
-    if (a.id === DEFAULT_BUCKET_ID) return -1;
-    if (b.id === DEFAULT_BUCKET_ID) return 1;
-    if (!!a.archived !== !!b.archived) return a.archived ? 1 : -1;
-    return a.name.localeCompare(b.name);
-  });
+  // The default jar plus buckets owned by the active user. (Any legacy
+  // ownerless bucket also shows so it can be assigned an owner.) Unlike the
+  // main list we keep archived buckets so they can be restored or deleted.
+  const sorted = state.buckets
+    .filter(
+      (b) =>
+        b.id === DEFAULT_BUCKET_ID ||
+        !b.owner ||
+        b.owner === state.activeUser,
+    )
+    .sort((a, b) => {
+      if (a.id === DEFAULT_BUCKET_ID) return -1;
+      if (b.id === DEFAULT_BUCKET_ID) return 1;
+      if (!!a.archived !== !!b.archived) return a.archived ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
 
   if (sorted.length === 0) {
     $manageBuckets.innerHTML = "";
@@ -473,16 +573,30 @@ function renderManageBuckets() {
             b.id,
           )}">${esc(ownerLabel(b.owner))}</button>`;
       const goalVal = Number(b.goal) > 0 ? Number(b.goal) : "";
+      // The default jar can't be renamed or given a goal.
+      const nameField = isDefault
+        ? `<span class="bucket-name-fixed" data-field="name">${esc(b.name)}</span>`
+        : `<input type="text" data-field="name" value="${esc(b.name)}" aria-label="Bucket name" />`;
+      const goalField = isDefault
+        ? `<span class="bucket-goal-fixed"></span>`
+        : `<input class="bucket-goal-input" type="number" min="0" step="0.01" inputmode="decimal" data-field="goal" value="${goalVal}" placeholder="Goal $" aria-label="Goal amount" />`;
       return `
         <li class="manage-row bucket ${
           b.archived ? "archived" : ""
         }" data-id="${esc(b.id)}">
-          <input type="text" data-field="name" value="${esc(b.name)}" aria-label="Bucket name" />
-          <input class="bucket-goal-input" type="number" min="0" step="0.01" inputmode="decimal" data-field="goal" value="${goalVal}" placeholder="Goal $" aria-label="Goal amount" />
+          ${nameField}
+          ${goalField}
           ${ownerBtn}
           <button class="archive-btn" data-action="toggle-bucket-archive" data-id="${esc(
             b.id,
           )}" ${isDefault ? "disabled" : ""}>${archiveLabel}</button>
+          ${
+            isDefault
+              ? ""
+              : `<button class="delete-btn" data-action="delete-bucket" data-id="${esc(
+                  b.id,
+                )}" aria-label="Delete ${esc(b.name)}">Delete</button>`
+          }
         </li>`;
     })
     .join("");
@@ -794,9 +908,10 @@ async function submitNewBucket(e) {
     await addDoc(collection(db, "buckets"), {
       name,
       archived: false,
+      owner: state.activeUser,
     });
     $newBucketName.value = "";
-    toast("Bucket added");
+    toast(`Bucket added for ${userName(state.activeUser)}`);
   } catch (err) {
     console.error(err);
     toast("Couldn't add bucket", "error");
@@ -804,6 +919,7 @@ async function submitNewBucket(e) {
 }
 
 async function renameBucket(bucketId, value) {
+  if (bucketId === DEFAULT_BUCKET_ID) return; // default jar can't be renamed
   const bucket = state.buckets.find((b) => b.id === bucketId);
   if (!bucket) return;
   const name = String(value).trim();
@@ -817,6 +933,7 @@ async function renameBucket(bucketId, value) {
 }
 
 async function updateBucketGoal(bucketId, value) {
+  if (bucketId === DEFAULT_BUCKET_ID) return; // default jar has no goal
   const bucket = state.buckets.find((b) => b.id === bucketId);
   if (!bucket) return;
   const raw = String(value).trim();
@@ -847,9 +964,13 @@ async function toggleBucketArchive(bucketId) {
   if (bucketId === DEFAULT_BUCKET_ID) return;
   const bucket = state.buckets.find((b) => b.id === bucketId);
   if (!bucket) return;
+  const archiving = !bucket.archived;
   try {
     await updateDoc(doc(db, "buckets", bucketId), {
-      archived: !bucket.archived,
+      archived: archiving,
+      // Stamp when it was archived so the monthly summary can show buckets
+      // closed out this month; clear it on restore.
+      archivedAt: archiving ? serverTimestamp() : null,
     });
   } catch (err) {
     console.error(err);
@@ -857,16 +978,54 @@ async function toggleBucketArchive(bucketId) {
   }
 }
 
-const OWNER_CYCLE = [undefined, "acacia", "david"];
+async function deleteBucket(bucketId) {
+  if (bucketId === DEFAULT_BUCKET_ID) return;
+  const bucket = state.buckets.find((b) => b.id === bucketId);
+  if (!bucket) return;
+  if (
+    !window.confirm(
+      `Delete "${bucket.name}"? Its balances and past activity can't be recovered.`,
+    )
+  ) {
+    return;
+  }
+  try {
+    // Deleting the bucket doc loses its name and balances, so leave a
+    // tombstone first — the monthly summary reads it to show what was closed
+    // out. (Balances/history are append-only per the rules, so this is how we
+    // keep a record.)
+    const balances = {};
+    for (const u of USERS) balances[u.id] = balanceFor(u.id, bucketId);
+    await addDoc(collection(db, "bucketTombstones"), {
+      name: bucket.name,
+      owner: bucket.owner ?? null,
+      balances,
+      deletedAt: serverTimestamp(),
+    });
+    await deleteDoc(doc(db, "buckets", bucketId));
+    if (state.activeBucket === bucketId) {
+      state.activeBucket = DEFAULT_BUCKET_ID;
+      localStorage.setItem("activeBucket", state.activeBucket);
+    }
+    toast(`Deleted ${bucket.name}`);
+  } catch (err) {
+    console.error(err);
+    toast("Couldn't delete bucket", "error");
+  }
+}
+
+// Buckets are always individual now — the toggle just moves a bucket between
+// the two users (a legacy ownerless bucket resolves to the first user).
+const OWNER_CYCLE = ["acacia", "david"];
 async function cycleBucketOwner(bucketId) {
   if (bucketId === DEFAULT_BUCKET_ID) return;
   const bucket = state.buckets.find((b) => b.id === bucketId);
   if (!bucket) return;
-  const idx = OWNER_CYCLE.indexOf(bucket.owner ?? undefined);
+  const idx = OWNER_CYCLE.indexOf(bucket.owner);
   const next = OWNER_CYCLE[(idx + 1) % OWNER_CYCLE.length];
   try {
     await updateDoc(doc(db, "buckets", bucketId), {
-      owner: next ?? null,
+      owner: next,
     });
   } catch (err) {
     console.error(err);
@@ -962,7 +1121,6 @@ $userBtns.forEach((btn) => {
     state.search = "";
     $search.value = "";
     render();
-    showHolidayPrompt();
   });
 });
 
@@ -1038,6 +1196,11 @@ $manageBuckets.addEventListener("click", (e) => {
   const owner = e.target.closest("[data-action='cycle-owner']");
   if (owner) {
     cycleBucketOwner(owner.dataset.id);
+    return;
+  }
+  const del = e.target.closest("[data-action='delete-bucket']");
+  if (del) {
+    deleteBucket(del.dataset.id);
   }
 });
 
@@ -1094,85 +1257,58 @@ function pad2(n) {
   return String(n).padStart(2, "0");
 }
 
-function getHolidayToday(now = new Date()) {
-  const year = now.getFullYear();
-  const md = `${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
-  const fixed = [
-    { id: "valentines", name: "Valentine's Day", md: "02-14" },
-    { id: "july-4", name: "Independence Day", md: "07-04" },
-    { id: "halloween", name: "Halloween", md: "10-31" },
-    { id: "christmas", name: "Christmas", md: "12-25" },
-  ];
-  for (const h of fixed) {
-    if (h.md === md) return { ...h, amount: 10 };
+const HOLIDAY_AMOUNT = 10;
+
+// Fixed-date holidays (same MM-DD every year). Easter, Chinese New Year, and
+// Thanksgiving float, so they're resolved per-year below.
+const FIXED_HOLIDAYS = [
+  { id: "valentines", name: "Valentine's Day", md: "02-14" },
+  { id: "july-4", name: "Independence Day", md: "07-04" },
+  { id: "halloween", name: "Halloween", md: "10-31" },
+  { id: "christmas", name: "Christmas", md: "12-25" },
+];
+
+// Every recognised holiday resolved to its MM-DD for the given year, sorted by
+// date. Powers the "Show holidays" reference list.
+function holidaysForYear(year) {
+  const list = FIXED_HOLIDAYS.map((h) => ({ id: h.id, name: h.name, md: h.md }));
+  if (EASTER[year]) list.push({ id: "easter", name: "Easter", md: EASTER[year] });
+  if (CHINESE_NEW_YEAR[year]) {
+    list.push({
+      id: "chinese-new-year",
+      name: "Chinese New Year",
+      md: CHINESE_NEW_YEAR[year],
+    });
   }
-  if (EASTER[year] === md) return { id: "easter", name: "Easter", amount: 10 };
-  if (CHINESE_NEW_YEAR[year] === md) {
-    return { id: "chinese-new-year", name: "Chinese New Year", amount: 10 };
-  }
-  if (now.getMonth() === 10 && pad2(now.getDate()) === fourthThursdayOfNov(year)) {
-    return { id: "thanksgiving", name: "Thanksgiving", amount: 10 };
-  }
-  return null;
-}
-
-function todayKey(now = new Date()) {
-  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
-}
-
-function holidayDismissKey(holidayId, userId, now = new Date()) {
-  return `holidayDismissed:${todayKey(now)}:${holidayId}:${userId}`;
-}
-
-let currentHoliday = null;
-
-function showHolidayPrompt() {
-  const h = getHolidayToday();
-  if (!h) {
-    currentHoliday = null;
-    $holidayModal.hidden = true;
-    return;
-  }
-  const key = holidayDismissKey(h.id, state.activeUser);
-  if (localStorage.getItem(key)) {
-    currentHoliday = null;
-    $holidayModal.hidden = true;
-    return;
-  }
-  currentHoliday = h;
-  $holidayTitle.textContent = `Today is ${h.name}!`;
-  $holidayBody.textContent = `Add $${h.amount} to ${bucketName(
-    state.activeBucket,
-  )} for ${userName(state.activeUser)}?`;
-  $holidayApply.textContent = `Add $${h.amount}`;
-  $holidayModal.hidden = false;
-}
-
-function dismissHoliday() {
-  if (!currentHoliday) return;
-  localStorage.setItem(
-    holidayDismissKey(currentHoliday.id, state.activeUser),
-    "1",
-  );
-  currentHoliday = null;
-  $holidayModal.hidden = true;
-}
-
-async function applyHoliday() {
-  if (!currentHoliday) return;
-  const h = currentHoliday;
-  await addHistory({
-    userId: state.activeUser,
-    type: "holiday",
-    amount: h.amount,
-    holidayName: h.name,
+  list.push({
+    id: "thanksgiving",
+    name: "Thanksgiving",
+    md: `11-${fourthThursdayOfNov(year)}`,
   });
-  toast(`${h.name} +$${h.amount} → ${bucketName(state.activeBucket)}`);
-  dismissHoliday();
+  return list.sort((a, b) => a.md.localeCompare(b.md));
 }
 
-$holidayApply.addEventListener("click", applyHoliday);
-$holidayDismiss.addEventListener("click", dismissHoliday);
+function formatHolidayDate(md, year) {
+  const [mm, dd] = md.split("-").map(Number);
+  return new Date(year, mm - 1, dd).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function renderHolidays() {
+  const year = new Date().getFullYear();
+  $holidayList.innerHTML = holidaysForYear(year)
+    .map(
+      (h) => `
+        <li class="holiday-row">
+          <span class="holiday-name">${esc(h.name)}</span>
+          <span class="holiday-date">${esc(formatHolidayDate(h.md, year))}</span>
+          <span class="holiday-amount">+$${HOLIDAY_AMOUNT}</span>
+        </li>`,
+    )
+    .join("");
+}
 
 // ---------- Listeners ----------
 onSnapshot(collection(db, "chores"), (snap) => {
@@ -1198,6 +1334,27 @@ onSnapshot(
   },
 );
 
+// Month-scoped ledger for the "This month" summary. No limit, so the totals
+// stay correct however busy the month gets. The lower bound is fixed at attach
+// time; renderMonthlySummary re-filters by current month so it survives a
+// midnight/month rollover while the app is left open.
+const monthStart = (() => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+})();
+onSnapshot(
+  query(collection(db, "history"), where("createdAt", ">=", monthStart)),
+  (snap) => {
+    state.monthHistory = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    render();
+  },
+);
+
+onSnapshot(collection(db, "bucketTombstones"), (snap) => {
+  state.tombstones = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  render();
+});
+
 onSnapshot(collection(db, "balances"), (snap) => {
   const next = {};
   for (const d of snap.docs) {
@@ -1222,4 +1379,4 @@ onSnapshot(collection(db, "counters"), (snap) => {
 });
 
 render();
-showHolidayPrompt();
+renderHolidays();

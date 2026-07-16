@@ -431,12 +431,141 @@ main {
 
 .chore-list,
 .history-list,
-.manage-list {
+.manage-list,
+.holiday-list {
   list-style: none;
   margin: 12px 0 0;
   padding: 0;
   display: grid;
   gap: 8px;
+}
+
+.holiday-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  min-height: var(--tap);
+}
+
+.holiday-name {
+  font-weight: 500;
+}
+
+.holiday-date {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.holiday-amount {
+  color: var(--accent);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Monthly summary --- */
+.summary-month {
+  margin: 12px 4px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.summary-totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0 0 20px;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.summary-stat-label {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.summary-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary-stat-value.positive {
+  color: var(--accent);
+}
+
+.summary-stat-value.negative {
+  color: var(--warn);
+}
+
+.summary-heading {
+  margin: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.summary-bucket-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.summary-bucket-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  min-height: var(--tap);
+}
+
+.summary-bucket-name {
+  font-weight: 500;
+}
+
+.summary-bucket-status {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+
+.summary-bucket-amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.summary-empty {
+  color: var(--ink-soft);
+  font-size: 14px;
+  padding: 6px 4px;
 }
 
 .chore-cat-header {
@@ -693,10 +822,10 @@ main {
 }
 
 .manage-row.bucket {
-  grid-template-columns: 90px 1fr auto;
+  grid-template-columns: 90px 1fr auto auto;
   grid-template-areas:
-    "name name name"
-    "goal owner archive";
+    "name name name name"
+    "goal owner archive delete";
   gap: 8px 10px;
   align-items: center;
   padding: 10px 14px;
@@ -715,6 +844,15 @@ main {
   font-variant-numeric: tabular-nums;
 }
 
+/* Default jar: name is fixed text and it has no goal field. */
+.manage-row.bucket .bucket-goal-fixed {
+  grid-area: goal;
+}
+
+.manage-row.bucket .bucket-name-fixed {
+  align-self: center;
+}
+
 .manage-row.bucket .owner-btn {
   grid-area: owner;
   justify-self: start;
@@ -722,6 +860,10 @@ main {
 
 .manage-row.bucket .archive-btn {
   grid-area: archive;
+}
+
+.manage-row.bucket .delete-btn {
+  grid-area: delete;
 }
 
 .manage-row.bucket .bucket-goal-input::placeholder {
@@ -905,6 +1047,20 @@ main {
   box-shadow: none;
   min-height: 36px;
   border-radius: 999px;
+}
+
+.delete-btn {
+  background: transparent;
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  min-width: 70px;
+  padding: 0 12px;
+  font-size: 13px;
+  box-shadow: none;
+  min-height: 36px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* --- Flibbertygibbet (groceries) --- */

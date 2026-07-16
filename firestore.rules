@@ -14,6 +14,13 @@ service cloud.firestore {
       allow read, create, update, delete: if true;
     }
 
+    // Tombstones written when a bucket is deleted, so the monthly summary can
+    // still show what was closed out. Append-only like history.
+    match /bucketTombstones/{id} {
+      allow read, create: if true;
+      allow update, delete: if false;
+    }
+
     match /history/{id} {
       allow read, create: if true;
       allow update, delete: if false;
