@@ -111,24 +111,13 @@ Children's Books,,"Skating Shoes (Shoes, #7)",Noel Streatfeild
 Children's Books,,The Tale of Despereaux,Kate DiCamillo
 Children's Books,Anthology,Reader's Digest Great Stories for Young Readers,Reader's Digest Association
 Children's Books,Anthology,True Heroes: A Treasury of Modern-day Fairy Tales Written by Best-Selling Authors,Jonathan Diaz
-Children's Books,Classic,"Anne of Green Gables (Anne of Green Gables, #1)",L.M. Montgomery
-Children's Books,Classic,"Peter Pan (Peter Pan, #2)",J.M. Barrie
-Children's Books,Classic,The Secret Garden,Frances Hodgson Burnett
-Children's Books,Classic,"Through the Looking-Glass and What Alice Found There (Alice's Adventures in Wonderland, #2)",Lewis Carroll
 Children's Books,Dahl,Roald Dahl Omnibus: Charlie and the Chocolate Factory / James and the Giant Peach / Fantastic Mr Fox,Roald Dahl
 Children's Books,Dear America,Across the Wide and Lonesome Prairie: The Oregon Trail Diary of Hattie Campbell (Dear America),Kristiana Gregory
-Children's Books,Fablehaven,"Fablehaven (Fablehaven, #1)",Brandon Mull
-Children's Books,Fablehaven,"Grip of the Shadow Plague (Fablehaven, #3)",Brandon Mull
-Children's Books,Fablehaven,"Keys to the Demon Prison (Fablehaven, #5)",Brandon Mull
-Children's Books,Fablehaven,"Rise of the Evening Star (Fablehaven, #2)",Brandon Mull
-Children's Books,Fablehaven,"Secrets of the Dragon Sanctuary (Fablehaven, #4)",Brandon Mull
 Children's Books,Fairy tales,Hans Christian Andersen's Complete Fairy Tales (Leather-bound Classics),Hans Christian Andersen
 Children's Books,Fantasy,"Dragon Rider (Dragon Rider, #1)",Cornelia Funke
 Children's Books,Fantasy,"Magyk (Septimus Heap, #1)",Angie Sage
-Children's Books,Fantasy,"Master of the Phantom Isle (Dragonwatch, #3)",Brandon Mull
 Children's Books,Fantasy,"The Forgotten Sisters (Princess Academy, #3)",Shannon Hale
 Children's Books,Fantasy,The Graveyard Book,Neil Gaiman
-Children's Books,Fantasy,"Wrath of the Dragon King (Dragonwatch, #2)",Brandon Mull
 Children's Books,Judy Blume,"Here's to You, Rachel Robinson",Judy Blume
 Children's Books,MG Fantasy,"Peter and the Secret of Rundoon (Peter and the Starcatchers, #3)",Dave Barry
 Children's Books,Middle Grade,Dear Pen Pal,Heather Vogel Frederick
@@ -171,6 +160,10 @@ Classic Fiction,Austen,Pride and Prejudice,Jane Austen
 Classic Fiction,Austen,Sense and Sensibility,Jane Austen
 Classic Fiction,Austrian,Lieutenant Gustl (Sun & Moon Classics),Arthur Schnitzler
 Classic Fiction,Brontë,Wuthering Heights,Emily Brontë
+Classic Fiction,Children's classic,"Anne of Green Gables (Anne of Green Gables, #1)",L.M. Montgomery
+Classic Fiction,Children's classic,"Peter Pan (Peter Pan, #2)",J.M. Barrie
+Classic Fiction,Children's classic,The Secret Garden,Frances Hodgson Burnett
+Classic Fiction,Children's classic,"Through the Looking-Glass and What Alice Found There (Alice's Adventures in Wonderland, #2)",Lewis Carroll
 Classic Fiction,Dickens,A Christmas Carol,Charles Dickens
 Classic Fiction,Dickens,A Tale of Two Cities,Charles Dickens
 Classic Fiction,Dickens,David Copperfield,Charles Dickens
@@ -278,6 +271,16 @@ Fantasy,Anthology,The Classic Fantasy Collection,Arcturus Publishing
 Fantasy,Arthurian,Sir Gawain And The Green Knight (A Tolkien Miscellany #5),Gawain Poet
 Fantasy,Arthurian,The story of King Arthur and the knights of the table round; for boys and girls 1900 [Leather Bound],Edward Brooks
 Fantasy,Brandon Mull,"The Candy Shop War (The Candy Shop War, #1)",Brandon Mull
+Fantasy,Brandon Mull · Dragonwatch,"Dragonwatch (Dragonwatch, #1)",Brandon Mull
+Fantasy,Brandon Mull · Dragonwatch,Legend of the Dragon Slayer: The Origin Story of Dragonwatch (Dragonwatch),Brandon Mull
+Fantasy,Brandon Mull · Dragonwatch,"Master of the Phantom Isle (Dragonwatch, #3)",Brandon Mull
+Fantasy,Brandon Mull · Dragonwatch,"Return of the Dragon Slayers (Dragonwatch, #5)",Brandon Mull
+Fantasy,Brandon Mull · Dragonwatch,"Wrath of the Dragon King (Dragonwatch, #2)",Brandon Mull
+Fantasy,Brandon Mull · Fablehaven,"Fablehaven (Fablehaven, #1)",Brandon Mull
+Fantasy,Brandon Mull · Fablehaven,"Grip of the Shadow Plague (Fablehaven, #3)",Brandon Mull
+Fantasy,Brandon Mull · Fablehaven,"Keys to the Demon Prison (Fablehaven, #5)",Brandon Mull
+Fantasy,Brandon Mull · Fablehaven,"Rise of the Evening Star (Fablehaven, #2)",Brandon Mull
+Fantasy,Brandon Mull · Fablehaven,"Secrets of the Dragon Sanctuary (Fablehaven, #4)",Brandon Mull
 Fantasy,Comics,Batman: The Golden Age Omnibus Vol. 3,Bill Finger
 Fantasy,Comics,"The Amazing Spider-Man Omnibus, Vol. 1",Stan Lee
 Fantasy,Comics,"The Amazing Spider-Man Omnibus, Vol. 3",Stan Lee
@@ -287,9 +290,6 @@ Fantasy,Discworld,"Mort (Discworld, #4; Death, #1)",Terry Pratchett
 Fantasy,Discworld,"Sourcery (Discworld, #5; Rincewind, #3)",Terry Pratchett
 Fantasy,Discworld,"The Color of Magic (Discworld, #1; Rincewind, #1)",Terry Pratchett
 Fantasy,Discworld,"The Light Fantastic (Discworld, #2; Rincewind, #2)",Terry Pratchett
-Fantasy,Dragonwatch,"Dragonwatch (Dragonwatch, #1)",Brandon Mull
-Fantasy,Dragonwatch,Legend of the Dragon Slayer: The Origin Story of Dragonwatch (Dragonwatch),Brandon Mull
-Fantasy,Dragonwatch,"Return of the Dragon Slayers (Dragonwatch, #5)",Brandon Mull
 Fantasy,Epic,"A Game of Thrones (A Song of Ice and Fire, #1)",George R.R. Martin
 Fantasy,Fairy Tale,"Dragon Flight (Dragon Slippers, #2)",Jessica Day George
 Fantasy,Fairy Tale,"Dragon Slippers (Dragon Slippers, #1)",Jessica Day George
