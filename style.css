@@ -1360,7 +1360,7 @@ body.todo-page {
 
 .todo-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   margin-bottom: 18px;
   width: 100%;
@@ -1370,11 +1370,6 @@ body.todo-page {
 .todo-form > * {
   max-width: 100%;
   min-width: 0;
-}
-
-.todo-form .todo-title-input,
-.todo-form .todo-add-btn {
-  grid-column: 1 / -1;
 }
 
 .todo-form input {
