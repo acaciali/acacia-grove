@@ -41,7 +41,28 @@ service cloud.firestore {
       allow read, create, update, delete: if true;
     }
 
+    // Finalized per-user monthly totals (one doc per user+month), written by
+    // the lazy backfill once a month completes. Never deleted; updates stay
+    // allowed so a recompute can correct a month.
+    match /monthlySummaries/{id} {
+      allow read, create, update: if true;
+      allow delete: if false;
+    }
+
     match /todos/{id} {
+      allow read, create, update, delete: if true;
+    }
+
+    // Packing list: master items, trips, and per-trip packed state.
+    match /packingItems/{id} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /trips/{id} {
+      allow read, create, update, delete: if true;
+    }
+
+    match /tripItems/{id} {
       allow read, create, update, delete: if true;
     }
   }

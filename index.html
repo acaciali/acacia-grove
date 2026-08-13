@@ -46,9 +46,15 @@
       </section>
 
       <section class="item-counter-section" aria-label="Items put away">
+        <button class="item-side-btn" id="items-plus5-btn" type="button">
+          +5 items
+        </button>
         <button class="item-counter-btn" id="item-counter-btn" type="button">
           <span class="item-counter-label">Items</span>
           <span class="item-counter-count" id="item-counter-count">0/20</span>
+        </button>
+        <button class="item-side-btn" id="items-remaining-btn" type="button">
+          +Remaining
         </button>
       </section>
 
@@ -145,6 +151,13 @@
         <details>
           <summary>This month</summary>
           <div id="monthly-summary"></div>
+        </details>
+      </section>
+
+      <section class="manage">
+        <details>
+          <summary>Monthly History</summary>
+          <div id="monthly-history"></div>
         </details>
       </section>
     </main>

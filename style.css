@@ -263,6 +263,26 @@ main {
   margin-top: 10px;
   display: flex;
   justify-content: center;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.item-side-btn {
+  flex: 1;
+  max-width: 110px;
+  min-height: 72px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.item-side-btn:active {
+  transform: scale(0.97);
 }
 
 .item-counter-btn {
@@ -566,6 +586,61 @@ main {
   color: var(--ink-soft);
   font-size: 14px;
   padding: 6px 4px;
+}
+
+/* --- Monthly history --- */
+.month-history-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.month-history-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  min-height: var(--tap);
+}
+
+.month-history-row.head {
+  background: transparent;
+  border: none;
+  min-height: 0;
+  padding: 0 14px;
+}
+
+.month-history-row.head .month-history-amount {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.month-history-name {
+  font-weight: 500;
+}
+
+.month-history-amount {
+  min-width: 72px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.month-history-row:not(.head) .month-history-amount.positive {
+  color: var(--accent);
+}
+
+.month-history-row:not(.head) .month-history-amount.negative {
+  color: var(--warn);
 }
 
 .chore-cat-header {
@@ -1486,4 +1561,177 @@ body.todo-page {
 body.todo-page .clear-checked {
   border-color: var(--line);
   color: var(--ink-soft);
+}
+
+/* --- Packing list (shares the todo pink theme) --- */
+.trip-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.trip-select {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font: inherit;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.new-trip-btn {
+  min-height: var(--tap);
+  padding: 0 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+}
+
+.new-trip-btn:active {
+  transform: scale(0.98);
+}
+
+.pack-progress {
+  margin: 0 4px 4px;
+  min-height: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.pack-section-title {
+  margin: 20px 4px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.pack-cat-header {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 6px 4px 2px;
+  margin-top: 4px;
+}
+
+.pack-cat-header:first-child {
+  margin-top: 0;
+}
+
+.pack-empty {
+  color: var(--ink-soft);
+  font-size: 14px;
+  padding: 6px 4px;
+}
+
+.pack-add-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 6px 6px 6px 14px;
+  min-height: var(--tap);
+}
+
+.pack-plus-btn {
+  border: none;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 999px;
+  min-height: 36px;
+  min-width: 56px;
+  padding: 0 14px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.master-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.master-form input {
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  outline: none;
+  font: inherit;
+  color: inherit;
+}
+
+.master-form input:focus {
+  border-color: var(--accent);
+}
+
+.master-form button {
+  border: none;
+  padding: 0 16px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.trip-delete-btn {
+  display: block;
+  margin: 24px auto 0;
+  border: none;
+  background: transparent;
+  color: var(--warn);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.bag-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.bag-picker button {
+  min-height: 56px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.bag-picker button:active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+/* The manage tiles reuse Month Money's .manage styles; tighten the gap the
+   packing page's stacked sections leave between them. */
+.packing-page .manage {
+  margin-top: 20px;
+}
+
+.packing-page .manage .pack-list {
+  margin-top: 8px;
 }

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#fff5f7" />
+    <title>Packing List</title>
+    <link rel="apple-touch-icon" href="./todo-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Packing List" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="todo-page packing-page">
+    <nav class="tabs" aria-label="Sections">
+      <a class="tab" href="./todolist.html">Todo List</a>
+      <a class="tab active" href="./packing.html">Packing List</a>
+    </nav>
+
+    <main class="todo-main">
+      <h1 class="todo-title">Packing List</h1>
+
+      <div class="trip-bar">
+        <select
+          class="trip-select"
+          id="trip-select"
+          aria-label="Current trip"
+        ></select>
+        <button class="new-trip-btn" id="new-trip-btn" type="button">
+          + New trip
+        </button>
+      </div>
+
+      <div class="pack-progress" id="pack-progress" aria-live="polite"></div>
+
+      <div id="trip-view">
+        <h2 class="pack-section-title">To pack</h2>
+        <ul class="todo-list pack-list" id="unpacked-list"></ul>
+
+        <h2 class="pack-section-title">Packed</h2>
+        <ul class="todo-list pack-list" id="packed-list"></ul>
+
+        <button class="clear-checked" id="reset-packing" hidden>
+          Unpack everything
+        </button>
+
+        <section class="manage">
+          <details>
+            <summary>Add items to this trip</summary>
+            <ul class="todo-list pack-list" id="add-items-list"></ul>
+          </details>
+        </section>
+      </div>
+
+      <p class="todo-empty" id="no-trip" hidden>
+        No trip yet — tap “+ New trip” to start packing.
+      </p>
+
+      <section class="manage">
+        <details>
+          <summary>Master packing list</summary>
+          <form class="master-form" id="master-form" autocomplete="off">
+            <input
+              id="master-name"
+              type="text"
+              placeholder="Item (e.g. Toothbrush)"
+              aria-label="Item name"
+              required
+            />
+            <input
+              id="master-category"
+              type="text"
+              placeholder="Category (e.g. Toiletries)"
+              aria-label="Category"
+              list="pack-categories"
+              required
+            />
+            <datalist id="pack-categories"></datalist>
+            <button type="submit">Add</button>
+          </form>
+          <ul class="todo-list pack-list" id="master-list"></ul>
+        </details>
+      </section>
+
+      <button class="trip-delete-btn" id="delete-trip-btn" type="button" hidden>
+        Delete this trip
+      </button>
+    </main>
+
+    <div class="status" id="status" hidden></div>
+
+    <div
+      class="modal"
+      id="bag-modal"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bag-title"
+    >
+      <div class="modal-card">
+        <h2 id="bag-title" class="modal-title">Pack it</h2>
+        <p class="modal-body" id="bag-body"></p>
+        <div class="bag-picker" id="bag-picker"></div>
+        <div class="modal-actions">
+          <button class="modal-btn dismiss" id="bag-cancel" type="button">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./packing.js"></script>
+  </body>
+</html>

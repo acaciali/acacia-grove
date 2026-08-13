@@ -13,6 +13,7 @@ import {
   where,
   orderBy,
   limit,
+  getDocs,
   onSnapshot,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -49,6 +50,7 @@ const state = {
   chores: [],
   history: [],
   monthHistory: [],
+  monthlySummaries: [],
   tombstones: [],
   balances: {},
   itemCounts: {},
@@ -65,6 +67,13 @@ const balanceDocId = (userId, bucketId) => `${userId}__${bucketId}`;
 
 const ITEM_GOAL = 20;
 const itemCounterDocId = (userId) => `items-${userId}`;
+
+// Finalized per-user monthly totals live in `monthlySummaries`, one doc per
+// user+month, written only once a month has fully ended (so the "This month"
+// tile stays the sole source for the current month). Fixed doc IDs make the
+// lazy backfill idempotent when two devices race to finalize the same month.
+const monthKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+const summaryDocId = (userId, key) => `${userId}__${key}`;
 
 if (!USERS.find((u) => u.id === state.activeUser)) {
   state.activeUser = "acacia";
@@ -102,6 +111,9 @@ const $transferAmount = document.getElementById("transfer-amount");
 const $transferCancel = document.getElementById("transfer-cancel");
 const $itemCounterBtn = document.getElementById("item-counter-btn");
 const $itemCounterCount = document.getElementById("item-counter-count");
+const $itemsPlus5Btn = document.getElementById("items-plus5-btn");
+const $itemsRemainingBtn = document.getElementById("items-remaining-btn");
+const $monthlyHistory = document.getElementById("monthly-history");
 const $customModal = document.getElementById("custom-modal");
 const $customBody = document.getElementById("custom-body");
 const $customPicker = document.getElementById("custom-picker");
@@ -275,6 +287,7 @@ function render() {
   renderManage();
   renderManageBuckets();
   renderMonthlySummary();
+  renderMonthlyHistory();
 }
 
 // Per-user summary of the current calendar month. Earned/spent come from the
@@ -354,6 +367,132 @@ function renderMonthlySummary() {
     </div>
     <h4 class="summary-heading">Spent on</h4>
     <ul class="summary-bucket-list">${spentOnHtml}</ul>`;
+}
+
+// Past-year totals for the active user, one row per completed month, newest
+// first. The current month never appears here — see finalizeMonthlySummaries.
+function renderMonthlyHistory() {
+  const userId = state.activeUser;
+  const rows = state.monthlySummaries
+    .filter((s) => s.userId === userId)
+    .sort((a, b) => b.month.localeCompare(a.month))
+    .slice(0, 12);
+
+  if (rows.length === 0) {
+    $monthlyHistory.innerHTML = `<p class="summary-empty">No completed months yet — totals show up here once a month ends.</p>`;
+    return;
+  }
+
+  const rowsHtml = rows
+    .map((r) => {
+      const [y, m] = r.month.split("-").map(Number);
+      const label = new Date(y, m - 1, 1).toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+      });
+      const earned = Number(r.earned) || 0;
+      const spent = Number(r.spent) || 0;
+      const earnedStr = (earned >= 0 ? "+" : "") + fmt(earned);
+      const spentStr = spent > 0 ? "-" + fmt(spent) : fmt(spent);
+      return `
+        <li class="month-history-row">
+          <span class="month-history-name">${esc(label)}</span>
+          <span class="month-history-amount positive">${earnedStr}</span>
+          <span class="month-history-amount negative">${spentStr}</span>
+        </li>`;
+    })
+    .join("");
+
+  $monthlyHistory.innerHTML = `
+    <ul class="month-history-list">
+      <li class="month-history-row head" aria-hidden="true">
+        <span class="month-history-name"></span>
+        <span class="month-history-amount">Earned</span>
+        <span class="month-history-amount">Spent</span>
+      </li>
+      ${rowsHtml}
+    </ul>`;
+}
+
+// Lazily backfill `monthlySummaries` for any completed month in the past year
+// that doesn't have docs yet (normally just last month, right after rollover).
+// Runs once per app load, after the first summaries snapshot arrives so we
+// know what's missing. Totals mirror renderMonthlySummary: transfers are
+// internal moves so they're excluded, spends count positive toward "spent".
+let summariesFinalized = false;
+async function finalizeMonthlySummaries() {
+  if (summariesFinalized) return;
+  summariesFinalized = true;
+
+  const now = new Date();
+  const currentStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const yearAgoStart = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+
+  // The 12 completed months, oldest first.
+  const keys = [];
+  for (let i = 12; i >= 1; i--) {
+    keys.push(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+  }
+
+  const existing = new Set(state.monthlySummaries.map((s) => s.id));
+  const anyMissing = keys.some((k) =>
+    USERS.some((u) => !existing.has(summaryDocId(u.id, k))),
+  );
+  if (!anyMissing) return;
+
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, "history"),
+        where("createdAt", ">=", yearAgoStart),
+        where("createdAt", "<", currentStart),
+      ),
+    );
+
+    const totals = new Map(); // summaryDocId -> { earned, spent }
+    let firstActivityKey = null;
+    for (const d of snap.docs) {
+      const h = d.data();
+      if (h.type === "transfer" || !h.userId) continue;
+      const when = h.createdAt?.toDate ? h.createdAt.toDate() : null;
+      if (!when) continue;
+      const key = monthKey(when);
+      if (!firstActivityKey || key < firstActivityKey) firstActivityKey = key;
+      const id = summaryDocId(h.userId, key);
+      const t = totals.get(id) || { earned: 0, spent: 0 };
+      const amt = Number(h.amount) || 0;
+      if (h.type === "spend") t.spent += -amt;
+      else t.earned += amt;
+      totals.set(id, t);
+    }
+
+    // Nothing before this month yet — no months to close out, and skipping
+    // months before the first activity keeps pre-app months from showing as
+    // empty $0 rows.
+    if (!firstActivityKey) return;
+
+    const batch = writeBatch(db);
+    let writes = 0;
+    for (const key of keys) {
+      if (key < firstActivityKey) continue;
+      for (const u of USERS) {
+        const id = summaryDocId(u.id, key);
+        if (existing.has(id)) continue;
+        const t = totals.get(id) || { earned: 0, spent: 0 };
+        batch.set(doc(db, "monthlySummaries", id), {
+          userId: u.id,
+          month: key,
+          earned: t.earned,
+          spent: t.spent,
+        });
+        writes++;
+      }
+    }
+    if (writes > 0) await batch.commit();
+  } catch (err) {
+    console.error(err);
+    summariesFinalized = false; // let a later snapshot retry
+  }
 }
 
 function renderItemCounter() {
@@ -666,39 +805,39 @@ async function tapMonth() {
   toast(`Month start +$25 → ${bucketName(state.activeBucket)}`);
 }
 
-async function tapItemCounter() {
+// Add n items to the active user's counter. Every full lap of ITEM_GOAL pays
+// $1 and the leftover carries into the next lap (18 + 5 → $1 and 3/20).
+async function addItems(n) {
   const userId = state.activeUser;
   const current = Number(state.itemCounts[userId]) || 0;
-  const next = current + 1;
-  if (next >= ITEM_GOAL) {
-    try {
-      await setDoc(
-        doc(db, "counters", itemCounterDocId(userId)),
-        { count: 0 },
-        { merge: true },
-      );
-      await addHistory({
-        userId,
-        type: "items",
-        amount: 1,
-      });
-      toast(`${ITEM_GOAL} items put away — +$1 → ${bucketName(state.activeBucket)}`);
-    } catch (err) {
-      console.error(err);
-      toast("Couldn't save count", "error");
-    }
-    return;
-  }
+  const total = current + n;
+  const awards = Math.floor(total / ITEM_GOAL);
+  const nextCount = total % ITEM_GOAL;
   try {
     await setDoc(
       doc(db, "counters", itemCounterDocId(userId)),
-      { count: next },
+      { count: nextCount },
       { merge: true },
     );
   } catch (err) {
     console.error(err);
     toast("Couldn't save count", "error");
+    return;
   }
+  if (awards > 0) {
+    await addHistory({
+      userId,
+      type: "items",
+      amount: awards,
+    });
+    toast(`${ITEM_GOAL} items put away — +${fmt(awards)} → ${bucketName(state.activeBucket)}`);
+  } else if (n > 1) {
+    toast(`+${n} items (${nextCount}/${ITEM_GOAL})`);
+  }
+}
+
+function tapItemCounter() {
+  return addItems(1);
 }
 
 async function tapQuick(amount) {
@@ -1148,6 +1287,11 @@ document.querySelectorAll(".quick-btn").forEach((btn) => {
 });
 
 $itemCounterBtn.addEventListener("click", tapItemCounter);
+$itemsPlus5Btn.addEventListener("click", () => addItems(5));
+$itemsRemainingBtn.addEventListener("click", () => {
+  const current = Number(state.itemCounts[state.activeUser]) || 0;
+  addItems(ITEM_GOAL - current);
+});
 $transferBtn.addEventListener("click", openTransferModal);
 $transferCancel.addEventListener("click", closeTransferModal);
 $transferForm.addEventListener("submit", submitTransfer);
@@ -1353,6 +1497,15 @@ onSnapshot(
 onSnapshot(collection(db, "bucketTombstones"), (snap) => {
   state.tombstones = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   render();
+});
+
+// Finalization waits for the first snapshot so it can tell which completed
+// months are already written; the flag inside keeps it from looping on its
+// own writes.
+onSnapshot(collection(db, "monthlySummaries"), (snap) => {
+  state.monthlySummaries = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  render();
+  finalizeMonthlySummaries();
 });
 
 onSnapshot(collection(db, "balances"), (snap) => {
