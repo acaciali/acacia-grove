@@ -32,12 +32,15 @@
           aria-label="New todo"
           required
         />
-        <input
-          id="new-todo-date"
-          class="todo-date-input"
-          type="date"
-          aria-label="Due date (optional)"
-        />
+        <label class="todo-date-field">
+          <span class="todo-date-label"><span class="todo-date-icon" aria-hidden="true">📅</span>Due date</span>
+          <input
+            id="new-todo-date"
+            class="todo-date-input"
+            type="date"
+            aria-label="Due date (optional)"
+          />
+        </label>
         <input
           id="new-todo-category"
           class="todo-cat-input"

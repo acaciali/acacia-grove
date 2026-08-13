@@ -1394,9 +1394,52 @@ body.todo-page {
   box-shadow: 0 0 0 3px rgba(236, 75, 138, 0.15);
 }
 
-.todo-form .todo-date-input {
+/* The date input sits inside a labeled row: an empty iOS date control renders
+   as a blank box with its own intrinsic width, so the label carries the
+   meaning and the row (not the control) carries the field styling. */
+.todo-date-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--tap);
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.todo-date-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.todo-date-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.todo-form .todo-date-field input {
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
   font-variant-numeric: tabular-nums;
   color: var(--ink);
+}
+
+.todo-form .todo-date-field input:focus {
+  box-shadow: none;
+}
+
+.todo-date-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(236, 75, 138, 0.15);
 }
 
 .todo-add-btn {
