@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Seed Packing List</title>
+    <link rel="stylesheet" href="./style.css" />
+    <style>
+      main.seed {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 24px 16px 48px;
+      }
+      .seed h1 {
+        margin-top: 0;
+      }
+      .seed-status {
+        background: var(--surface);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        margin: 16px 0;
+        box-shadow: var(--shadow);
+        font-variant-numeric: tabular-nums;
+      }
+      .seed-btn {
+        display: block;
+        width: 100%;
+        min-height: 56px;
+        background: var(--accent);
+        color: var(--accent-ink);
+        border: none;
+        border-radius: var(--radius);
+        font-size: 17px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .seed-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .seed-log {
+        margin-top: 18px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+        background: var(--surface);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        max-height: 320px;
+        overflow: auto;
+        white-space: pre-wrap;
+        box-shadow: var(--shadow);
+      }
+      .seed-warn {
+        background: #fff4d9;
+        color: #6b4a05;
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        margin: 12px 0;
+      }
+      .seed-link {
+        display: inline-block;
+        margin-top: 16px;
+        color: var(--ink);
+      }
+    </style>
+  </head>
+  <body class="todo-page">
+    <main class="seed">
+      <h1>Seed Packing List</h1>
+      <p>
+        Adds a starter set of common travel items to the master packing list,
+        grouped into categories (Clothes, Warm Clothes, Summer Clothes,
+        Toiletries, and so on). Items already on the master list are skipped,
+        so this is safe to re-run and won't resurrect items you've deleted —
+        unless you run it again after deleting a starter item, which re-adds
+        it.
+      </p>
+
+      <div class="seed-status" id="status">Checking current master list…</div>
+
+      <button class="seed-btn" id="seed-btn" disabled>Checking…</button>
+
+      <div class="seed-log" id="log" hidden></div>
+
+      <a class="seed-link" href="./packing.html">→ Back to the packing list</a>
+    </main>
+
+    <script type="module" src="./seed-packing.js"></script>
+  </body>
+</html>
